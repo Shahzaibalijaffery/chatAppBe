@@ -19,6 +19,42 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Database connection setup (before middleware that checks it)
+const User = require("./models/User");
+
+// Configure mongoose to handle slow connections
+mongoose.set("bufferCommands", false); // Disable mongoose buffering
+mongoose.set("bufferMaxEntries", 0); // Disable mongoose buffering
+
+const mongooseOptions = {
+  serverSelectionTimeoutMS: 30000, // 30 seconds - time to wait for server selection
+  socketTimeoutMS: 45000, // 45 seconds - time to wait for socket operations
+  connectTimeoutMS: 30000, // 30 seconds - time to wait for initial connection
+  maxPoolSize: 10, // Maximum number of connections in the pool
+  minPoolSize: 2, // Minimum number of connections in the pool
+  retryWrites: true, // Retry writes on network errors
+  w: "majority", // Write concern
+};
+
+// Track connection state
+let isDbConnected = false;
+
+// Connection event handlers
+mongoose.connection.on("connected", () => {
+  console.log("MongoDB connection established");
+  isDbConnected = true;
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("MongoDB connection error:", err);
+  isDbConnected = false;
+});
+
+mongoose.connection.on("disconnected", () => {
+  console.warn("MongoDB disconnected");
+  isDbConnected = false;
+});
+
 // Request logging middleware
 app.use((req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -48,13 +84,36 @@ app.use((req, res, next) => {
   next();
 });
 
-// Database connection
-const User = require("./models/User");
+// Database connection check middleware (skip for health check)
+app.use((req, res, next) => {
+  if (req.path === "/api/health") {
+    return next();
+  }
+  
+  if (!isDbConnected && mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      error: "Database connection not available. Please try again in a moment.",
+      dbState: mongoose.connection.readyState === 0 ? "disconnected" : 
+               mongoose.connection.readyState === 2 ? "connecting" : "disconnecting"
+    });
+  }
+  
+  next();
+});
+
+// Handle process termination
+process.on("SIGINT", async () => {
+  await mongoose.connection.close();
+  console.log("MongoDB connection closed through app termination");
+  process.exit(0);
+});
 
 mongoose
-  .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/chatapp")
+  .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/chatapp", mongooseOptions)
   .then(async () => {
     console.log("MongoDB connected successfully");
+    isDbConnected = true;
 
     // Create test users if they don't exist
     try {
