@@ -24,7 +24,6 @@ const User = require("./models/User");
 
 // Configure mongoose to handle slow connections
 mongoose.set("bufferCommands", false); // Disable mongoose buffering
-mongoose.set("bufferMaxEntries", 0); // Disable mongoose buffering
 
 const mongooseOptions = {
   serverSelectionTimeoutMS: 30000, // 30 seconds - time to wait for server selection
