@@ -1,95 +1,89 @@
-const User = require("../models/User");
+const userService = require("../services/userService");
 
-// Helper function to format user response
-const formatUserResponse = (user) => {
-  return {
-    id: user._id.toString(),
-    name: user.name,
-    age: user.age,
-    bio: user.bio || null,
-    photos: user.photos || [],
-    location: user.location?.latitude
-      ? {
-          latitude: user.location.latitude,
-          longitude: user.location.longitude,
-          city: user.location.city || null,
-        }
-      : null,
-    preferences: user.preferences
-      ? {
-          ageRange: user.preferences.ageRange,
-          maxDistance: user.preferences.maxDistance || null,
-          interests: user.preferences.interests || [],
-        }
-      : null,
-    createdAt: user.createdAt.toISOString(),
-    updatedAt: user.updatedAt.toISOString(),
-  };
-};
-
-// @desc    Get all users
-// @route   GET /api/users
-// @access  Private
-exports.getAllUsers = async (req, res) => {
+exports.getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.find().select("-password").sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      data: users.map(formatUserResponse),
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    const data = await userService.getAllUsers(req.user._id);
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
   }
 };
 
-// @desc    Update user profile
-// @route   PATCH /api/users/:userId
-// @access  Private
-exports.updateUser = async (req, res) => {
+exports.touchActive = async (req, res, next) => {
   try {
-    // Only allow users to update their own profile
-    if (req.params.userId !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        error: 'Not authorized to update this profile'
-      });
-    }
+    await userService.touchLastActive(req.user._id);
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
 
-    const { name, age, bio, photos, location, preferences } = req.body;
-    const updateData = {};
-
-    if (name !== undefined) updateData.name = name;
-    if (age !== undefined) updateData.age = age;
-    if (bio !== undefined) updateData.bio = bio;
-    if (photos !== undefined) updateData.photos = photos;
-    if (location !== undefined) updateData.location = location;
-    if (preferences !== undefined) updateData.preferences = preferences;
-
-    const user = await User.findByIdAndUpdate(
-      req.params.userId,
-      updateData,
-      { new: true, runValidators: true }
+exports.getPublicUser = async (req, res, next) => {
+  try {
+    const data = await userService.getPublicUser(
+      req.user._id,
+      req.params.userId
     );
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
-    }
+exports.updateMyLocation = async (req, res, next) => {
+  try {
+    const userId = req.user._id.toString();
+    const data = await userService.updateLocation(userId, req.user._id, req.body);
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
 
-    res.json({
-      success: true,
-      data: formatUserResponse(user)
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+exports.updateLocation = async (req, res, next) => {
+  try {
+    const data = await userService.updateLocation(
+      req.params.userId,
+      req.user._id,
+      req.body
+    );
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.blockUser = async (req, res, next) => {
+  try {
+    await userService.blockUser(req.user._id, req.params.targetUserId);
+    res.json({ success: true, message: "User blocked" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.reportUser = async (req, res, next) => {
+  try {
+    await userService.reportUser(
+      req.user._id,
+      req.params.targetUserId,
+      req.body.reason
+    );
+    res.json({ success: true, message: "Report submitted" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.updateUser = async (req, res, next) => {
+  try {
+    const data = await userService.updateUser(
+      req.params.userId,
+      req.user._id,
+      req.body
+    );
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
   }
 };

@@ -1,0 +1,31 @@
+---
+description: Models define Mongoose schema only — no application logic
+globs: models/**
+alwaysApply: false
+---
+
+# Models
+
+Models (`models/User.js`, `Message.js`, `Chat.js`) define **schema and structure only**:
+
+- Fields, types, defaults, indexes
+- Schema-level hooks only when purely structural (e.g. `timestamps`)
+- `select: false` for sensitive fields (passwords)
+
+## Forbidden in models
+
+- API response shaping
+- Authorization decisions
+- Multi-document workflows or chat/matching business rules
+
+Keep schemas **minimal**. Application logic belongs in `services/`.
+
+```javascript
+// GOOD — schema concern
+password: { type: String, required: true, select: false }
+
+// BAD — business rule in model
+userSchema.methods.canMessage = function (otherUser) { /* matching logic */ };
+```
+
+Move `canMessage`-style logic to `services/`.

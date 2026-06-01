@@ -1,0 +1,45 @@
+---
+description: Layered backend architecture — routes, controllers, services, models, middleware
+alwaysApply: true
+---
+
+# Backend Architecture (mychatAppBe)
+
+Express + MongoDB. Request flow: **routes → controllers → services → models**.
+
+| Layer | Responsibility | Must NOT contain |
+|-------|----------------|------------------|
+| `routes/` | Define endpoints, wire middleware & controller handlers | Business logic |
+| `controllers/` | Parse request, call service, shape HTTP response | Business logic |
+| `services/` | All business logic (brain of backend) | `req`/`res`, HTTP details |
+| `models/` | Mongoose schema & structure only | Application/business logic |
+| `middleware/` | Auth, validation, logging, generic cross-cutting | Business logic |
+| `utils/` | Pure helpers (e.g. token generation) | Feature-specific business rules |
+
+## Golden rules
+
+- **Business logic never lives in routes or controllers.**
+- **Services must not depend on the HTTP layer** — accept plain data, return plain data or throw errors.
+- When adding features, prefer `services/<feature>Service.js` over growing controllers.
+
+## Example (target pattern)
+
+```javascript
+// routes/users.js — endpoints only
+router.get("/", protect, getUsers);
+
+// controllers/userController.js — thin
+exports.getUsers = async (req, res, next) => {
+  try {
+    const users = await userService.listUsers(req.user.id);
+    res.json({ success: true, data: users });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// services/userService.js — logic here
+exports.listUsers = async (currentUserId) => { /* ... */ };
+```
+
+Match existing conventions: `/api/*` prefix, `{ success, data?, error? }` responses, `next(err)` for centralized errors in `server.js`.

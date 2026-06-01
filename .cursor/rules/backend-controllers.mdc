@@ -1,0 +1,43 @@
+---
+description: Thin controllers — request in, service call, response out
+globs: controllers/**
+alwaysApply: false
+---
+
+# Controllers
+
+Controllers must be **lightweight**. They may only:
+
+1. Read `req` (params, body, `req.user` from auth middleware)
+2. Call a **service** (or temporarily model only when migrating — prefer services for new code)
+3. Return `res.json(...)` with `{ success: true, data }` or pass errors via `next(err)`
+
+## Forbidden in controllers
+
+- Complex queries, matching algorithms, or multi-step workflows
+- Duplicated formatting/business rules (move to `services/` or `utils/`)
+- Direct Socket.io business logic beyond delegating to a service
+
+## Good vs bad
+
+```javascript
+// BAD — business logic in controller
+exports.register = async (req, res) => {
+  const existing = await User.findOne({ email: req.body.email });
+  if (existing) return res.status(400).json({ success: false, error: "..." });
+  const user = await User.create({ ... });
+  // ...hashing, token logic, formatting...
+};
+
+// GOOD — delegate to service
+exports.register = async (req, res, next) => {
+  try {
+    const result = await authService.register(req.body);
+    res.status(201).json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+```
+
+Use `next(err)` instead of ad-hoc try/catch in every method when centralized error middleware handles it.

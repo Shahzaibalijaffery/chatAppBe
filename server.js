@@ -108,135 +108,34 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
-mongoose
-  .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/chatapp", mongooseOptions)
-  .then(async () => {
-    console.log("MongoDB connected successfully");
-    isDbConnected = true;
+async function connectDatabase() {
+  await mongoose.connect(
+    process.env.MONGODB_URI || "mongodb://localhost:27017/chatapp",
+    mongooseOptions
+  );
+  console.log("MongoDB connected successfully");
+  console.log("Database:", mongoose.connection.name);
+  isDbConnected = true;
 
-    // Create test users if they don't exist
-    try {
-      const testUsers = [
-        {
-          name: "Test User 1",
-          email: "test1@example.com",
-          password: "test1234",
-          age: 25,
-          bio: "This is test user 1",
-          photos: ["https://via.placeholder.com/150"],
-          location: {
-            latitude: 40.7128,
-            longitude: -74.006,
-            city: "New York",
-          },
-          preferences: {
-            ageRange: { min: 20, max: 35 },
-            maxDistance: 50,
-            interests: ["coding", "music", "travel"],
-          },
-        },
-        {
-          name: "Test User 2",
-          email: "test2@example.com",
-          password: "test1234",
-          age: 28,
-          bio: "This is test user 2",
-          photos: ["https://via.placeholder.com/150"],
-          location: {
-            latitude: 40.758,
-            longitude: -73.9855,
-            city: "New York",
-          },
-          preferences: {
-            ageRange: { min: 22, max: 30 },
-            maxDistance: 40,
-            interests: ["photography", "hiking", "coffee"],
-          },
-        },
-        {
-          name: "Test User 3",
-          email: "test3@example.com",
-          password: "test1234",
-          age: 23,
-          bio: "This is test user 3",
-          photos: ["https://via.placeholder.com/150"],
-          location: {
-            latitude: 40.7505,
-            longitude: -73.9934,
-            city: "New York",
-          },
-          preferences: {
-            ageRange: { min: 20, max: 28 },
-            maxDistance: 60,
-            interests: ["reading", "movies", "cooking"],
-          },
-        },
-        {
-          name: "Test User 4",
-          email: "test4@example.com",
-          password: "test1234",
-          age: 30,
-          bio: "This is test user 4",
-          photos: ["https://via.placeholder.com/150"],
-          location: {
-            latitude: 40.7282,
-            longitude: -73.9942,
-            city: "New York",
-          },
-          preferences: {
-            ageRange: { min: 25, max: 35 },
-            maxDistance: 45,
-            interests: ["gaming", "tech", "sports"],
-          },
-        },
-        {
-          name: "Test User 5",
-          email: "test5@example.com",
-          password: "test1234",
-          age: 27,
-          bio: "This is test user 5",
-          photos: ["https://via.placeholder.com/150"],
-          location: {
-            latitude: 40.7614,
-            longitude: -73.9776,
-            city: "New York",
-          },
-          preferences: {
-            ageRange: { min: 23, max: 32 },
-            maxDistance: 55,
-            interests: ["art", "music", "travel"],
-          },
-        },
-      ];
+  const userCount = await User.countDocuments();
+  if (userCount === 0) {
+    console.warn(
+      "\n⚠ No users in database. Seed demo data:\n   npm run seed:companion\n   Login: ahmed.hussain@mychat.demo / test1234\n"
+    );
+  } else {
+    console.log(`Users in database: ${userCount}\n`);
+  }
+}
 
-      console.log("\n=== Creating Test Users ===");
-      for (const userData of testUsers) {
-        const existingUser = await User.findOne({ email: userData.email });
-        if (!existingUser) {
-          const user = await User.create(userData);
-          console.log(
-            `✓ Created: ${user.email} (Password: ${userData.password})`
-          );
-        } else {
-          console.log(`- Exists: ${existingUser.email} (Password: test1234)`);
-        }
-      }
-      console.log("===========================\n");
-    } catch (err) {
-      console.error("Error creating test users:", err.message);
-    }
-  })
-  .catch((err) => console.error("MongoDB connection error:", err));
-
-// Initialize Socket.io in controllers for real-time updates
-const messageController = require("./controllers/messageController");
-const chatController = require("./controllers/chatController");
-messageController.setSocketIO(io);
-chatController.setSocketIO(io);
+// Initialize Socket.io for real-time message delivery
+const messageService = require("./services/messageService");
+messageService.setSocketIO(io);
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/users", require("./routes/users"));
+app.use("/api/discovery", require("./routes/discovery"));
+app.use("/api/matches", require("./routes/matches"));
 app.use("/api/chats", require("./routes/chats"));
 app.use("/api/chats", require("./routes/messages")); // Messages routes are under /api/chats/:chatId/messages
 
@@ -245,9 +144,33 @@ app.get("/api/health", (req, res) => {
   res.json({ success: true, message: "Server is running" });
 });
 
+const jwt = require("jsonwebtoken");
+const { touchLastActive } = require("./services/userService");
+
 // Socket.io connection handling
 io.on("connection", (socket) => {
+  const token = socket.handshake.auth?.token;
+  if (token) {
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET ||
+          "your_super_secret_jwt_key_change_this_in_production"
+      );
+      socket.userId = decoded.id;
+      void touchLastActive(decoded.id);
+    } catch {
+      // unauthenticated socket — chat rooms only
+    }
+  }
+
   console.log("User connected:", socket.id);
+
+  socket.on("presence-ping", () => {
+    if (socket.userId) {
+      void touchLastActive(socket.userId);
+    }
+  });
 
   // Join a chat room
   socket.on("join-chat", (chatId) => {
@@ -291,21 +214,32 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-server
-  .listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  })
-  .on("error", (err) => {
-    if (err.code === "EADDRINUSE") {
-      console.error(
-        `Port ${PORT} is already in use. Please use a different port or kill the process using this port.`
-      );
-      console.error(`To kill the process: kill -9 $(lsof -ti:${PORT})`);
-      process.exit(1);
-    } else {
-      console.error("Server error:", err);
-      process.exit(1);
-    }
+function startHttpServer() {
+  return new Promise((resolve, reject) => {
+    server
+      .listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+        resolve();
+      })
+      .on("error", (err) => {
+        if (err.code === "EADDRINUSE") {
+          console.error(
+            `Port ${PORT} is already in use. Please use a different port or kill the process using this port.`
+          );
+          console.error(`To kill the process: kill -9 $(lsof -ti:${PORT})`);
+        } else {
+          console.error("Server error:", err);
+        }
+        reject(err);
+      });
+  });
+}
+
+connectDatabase()
+  .then(() => startHttpServer())
+  .catch((err) => {
+    console.error("Failed to start server:", err);
+    process.exit(1);
   });
 
 module.exports = { app, io };

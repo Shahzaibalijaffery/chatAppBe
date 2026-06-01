@@ -1,0 +1,22 @@
+---
+description: Prefer the simplest correct solution — no over-engineering
+alwaysApply: true
+---
+
+# Simplicity (most important)
+
+- Choose the **simplest** solution that meets the requirement.
+- Avoid extra abstraction layers, factories, or patterns the codebase does not already use.
+- Keep logic readable and direct — one clear path beats clever indirection.
+- If two implementations work, **pick the simpler one**.
+
+## Do not
+
+- Add a `services/` wrapper that only re-exports one line from a controller.
+- Introduce new folder structures or libraries without a concrete need.
+- Duplicate the same logic in multiple layers “just in case.”
+
+## Do
+
+- Reuse `utils/`, existing middleware (`middleware/auth.js`), and established controller patterns.
+- Extract to a service only when logic is non-trivial or reused — not for every endpoint by default.

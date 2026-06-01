@@ -28,6 +28,11 @@ const userSchema = new mongoose.Schema(
       min: [18, "Age must be at least 18"],
       max: [120, "Age must be less than 120"],
     },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+      default: null,
+    },
     bio: {
       type: String,
       default: null,
@@ -53,7 +58,46 @@ const userSchema = new mongoose.Schema(
         default: null,
         trim: true,
       },
+      areaName: {
+        type: String,
+        default: null,
+        trim: true,
+      },
     },
+    interestsToday: {
+      type: [String],
+      default: [],
+    },
+    interestsTodayUpdatedAt: {
+      type: Date,
+      default: null,
+    },
+    /** Start of the current 12h interests window (fixed; does not slide on each save). */
+    interestsTodayPeriodStartedAt: {
+      type: Date,
+      default: null,
+    },
+    /** Saves with a different selection in the current window (max 2 per 12h). */
+    interestsTodayUpdateCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    /** When false, user is hidden from Nearby / discovery for everyone. */
+    visibleInDiscovery: {
+      type: Boolean,
+      default: true,
+    },
+    lastActiveAt: {
+      type: Date,
+      default: null,
+    },
+    blockedUserIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     preferences: {
       ageRange: {
         min: {

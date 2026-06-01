@@ -1,0 +1,40 @@
+---
+description: API design, errors, performance, security, dependencies, consistency
+alwaysApply: true
+---
+
+# API design
+
+- Clean, predictable REST under `/api/*`
+- Consistent `{ success, data?, error? }` JSON
+- Document new endpoints in `API_ENDPOINTS.md`
+- No duplicate or unnecessary routes
+
+# Error handling
+
+- Use centralized middleware in `server.js` — avoid copy-pasted try/catch in every controller
+- Throw or `next(err)` with `status` for predictable client errors
+- Same error shape everywhere: `{ success: false, error: "..." }`
+
+# Performance
+
+- Fetch only required fields (`select`, lean queries when appropriate)
+- Avoid N+1 queries; batch or populate intentionally
+- No redundant DB round-trips per request
+
+# Security
+
+- Never log or return passwords/tokens in responses
+- Validate inputs (`express-validator` in routes)
+- Secrets in `.env` only — never commit credentials
+
+# Dependencies
+
+- Do not add npm packages unless necessary
+- Prefer built-in Node, Express, Mongoose, and existing deps in `package.json`
+
+# Consistency & scalability
+
+- Follow existing file layout and naming (`*Controller.js`, `routes/*.js`)
+- New features should extend services without rewriting core modules
+- Shared logic → `services/` or `utils/`, not duplicated in controllers

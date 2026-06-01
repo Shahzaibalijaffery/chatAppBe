@@ -1,0 +1,32 @@
+---
+description: Routes define endpoints only — no business logic
+globs: routes/**
+alwaysApply: false
+---
+
+# Routes
+
+Routes **only**:
+
+- Mount paths under `/api/*` (see `server.js`)
+- Attach middleware (`protect`, `express-validator` rules)
+- Map HTTP method + path → controller handler
+
+## REST conventions
+
+- `GET /api/users` — list
+- `POST /api/users` — create
+- `PUT /api/users/:id` — update
+- `DELETE /api/users/:id` — delete
+
+Use consistent, predictable naming. **Do not** add duplicate or unnecessary endpoints.
+
+## Example (this project)
+
+```javascript
+// routes/auth.js — validation + handler wiring only
+router.post("/register", registerValidation, register);
+router.get("/me", protect, getMe);
+```
+
+Validation rules (`body()`, etc.) belong in routes. Registration/login **logic** belongs in services, called from thin controllers.

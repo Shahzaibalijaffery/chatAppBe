@@ -1,0 +1,45 @@
+---
+description: All business logic lives in services — HTTP-agnostic, reusable
+globs: services/**
+alwaysApply: false
+---
+
+# Services
+
+**Services = brain of the backend.**
+
+- All business logic **must** live here (not routes, controllers, models, or middleware).
+- Functions take plain arguments (IDs, DTOs) — **no `req` or `res`**.
+- Return data or throw errors with `status` for the error middleware.
+- Keep modules loosely coupled; shared logic in one service or `utils/`.
+
+## Structure
+
+```
+services/
+  authService.js
+  userService.js
+  chatService.js
+  messageService.js
+```
+
+## Example
+
+```javascript
+// services/authService.js
+const User = require("../models/User");
+const generateToken = require("../utils/generateToken");
+
+exports.register = async ({ name, email, password, age }) => {
+  const existing = await User.findOne({ email });
+  if (existing) {
+    const err = new Error("User already exists");
+    err.status = 400;
+    throw err;
+  }
+  const user = await User.create({ name, email, password, age });
+  return { user: formatUser(user), token: generateToken(user._id) };
+};
+```
+
+New features: add or extend a service first, then wire a thin controller.

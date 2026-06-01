@@ -1,0 +1,30 @@
+---
+description: Reusable generic middleware — auth, validation, logging; no business logic
+globs: middleware/**
+alwaysApply: false
+---
+
+# Middleware
+
+Middleware must be **reusable and generic**:
+
+- Authentication (`protect` in `middleware/auth.js`)
+- Request validation (prefer `express-validator` in routes)
+- Logging, DB readiness checks (see `server.js` patterns)
+
+## Rules
+
+- **No business logic** — no feature-specific queries or rules.
+- Do not encode “who can chat with whom” or matching rules here — use services.
+- Auth middleware may attach `req.user`; it must not implement feature workflows.
+
+## Errors
+
+Throw or call `next(err)` with `err.status` when appropriate; let centralized handler in `server.js` format:
+
+```javascript
+res.status(err.status || 500).json({
+  success: false,
+  error: err.message || "Internal Server Error",
+});
+```

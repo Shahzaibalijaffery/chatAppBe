@@ -1,0 +1,21 @@
+---
+description: Explore before coding; fix bugs by understanding root cause
+alwaysApply: true
+---
+
+# Before writing backend code
+
+1. **Explore** — read `server.js`, relevant `routes/`, `controllers/`, `models/`, and `API_ENDPOINTS.md`.
+2. **Trace the flow** — routes → controllers → (services) → models.
+3. **Find reusable logic** — extend existing code instead of parallel implementations.
+4. **Implement** only after the above is clear.
+5. **If unclear** — ask the user before coding.
+
+# When something is broken
+
+1. **Remove** incorrect or broken changes first (do not stack patches).
+2. **Understand** root cause from existing working patterns.
+3. **Apply** a minimal, clean fix.
+4. Never layer hacks on top of broken code.
+
+**Reset → Understand → Fix properly.**
