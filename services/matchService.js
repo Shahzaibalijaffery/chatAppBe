@@ -42,7 +42,7 @@ exports.requestChat = async (requesterId, otherUserId) => {
     throw createError("Cannot request chat with yourself", 400);
   }
 
-  await assertNotBlocked(requesterId, otherUserId);
+  await exports.assertNotBlocked(requesterId, otherUserId);
 
   const [userA, userB] = sortPair(requesterId, otherUserId);
   let match = await Match.findOne({ userA, userB });
