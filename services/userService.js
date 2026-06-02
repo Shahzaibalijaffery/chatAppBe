@@ -207,3 +207,39 @@ exports.reportUser = async (currentUserId, targetUserId, reason) => {
 
   return { success: true };
 };
+
+exports.registerFcmToken = async (userId, { token, platform }) => {
+  if (!token?.trim()) {
+    throw createError("token is required", 400);
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw createError("User not found", 404);
+  }
+
+  const normalized = token.trim();
+  const next = (user.fcmTokens || []).filter(
+    (entry) => entry.token !== normalized
+  );
+  next.push({
+    token: normalized,
+    platform: platform || "unknown",
+    updatedAt: new Date(),
+  });
+  user.fcmTokens = next.slice(-5);
+  await user.save();
+
+  return { success: true };
+};
+
+exports.removeFcmToken = async (userId, token) => {
+  if (!token?.trim()) {
+    return { success: true };
+  }
+  await User.updateOne(
+    { _id: userId },
+    { $pull: { fcmTokens: { token: token.trim() } } }
+  );
+  return { success: true };
+};

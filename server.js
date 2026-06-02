@@ -129,7 +129,9 @@ async function connectDatabase() {
 
 // Initialize Socket.io for real-time message delivery
 const messageService = require("./services/messageService");
+const realtimeService = require("./services/realtimeService");
 messageService.setSocketIO(io);
+realtimeService.setSocketIO(io);
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));

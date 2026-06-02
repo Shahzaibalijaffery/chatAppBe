@@ -87,3 +87,21 @@ exports.updateUser = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.registerFcmToken = async (req, res, next) => {
+  try {
+    await userService.registerFcmToken(req.user._id, req.body);
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.removeFcmToken = async (req, res, next) => {
+  try {
+    await userService.removeFcmToken(req.user._id, req.body.token);
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};

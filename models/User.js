@@ -98,6 +98,13 @@ const userSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    fcmTokens: [
+      {
+        token: { type: String, required: true },
+        platform: { type: String, default: "unknown" },
+        updatedAt: { type: Date, default: Date.now },
+      },
+    ],
     preferences: {
       ageRange: {
         min: {

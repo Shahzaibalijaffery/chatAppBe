@@ -2,6 +2,32 @@ const Match = require("../models/Match");
 const User = require("../models/User");
 const { formatMatch } = require("../utils/formatMatch");
 const { createError } = require("../utils/appError");
+const realtimeService = require("./realtimeService");
+const pushService = require("./pushService");
+
+async function notifyIncomingRequest(match, requesterId) {
+  const recipientId =
+    match.userA.toString() === requesterId.toString()
+      ? match.userB
+      : match.userA;
+  const requester = await User.findById(requesterId).select("name");
+  pushService
+    .notifyChatRequest(recipientId, {
+      matchId: match._id.toString(),
+      fromUserId: requesterId.toString(),
+      fromName: requester?.name || "Someone",
+    })
+    .catch(() => {});
+}
+
+function broadcastMatch(match) {
+  const formatted = formatMatch(match);
+  realtimeService.emitMatchUpdates(
+    [match.userA, match.userB],
+    formatted
+  );
+  return formatted;
+}
 
 function sortPair(userId1, userId2) {
   const a = userId1.toString();
@@ -55,7 +81,8 @@ exports.requestChat = async (requesterId, otherUserId) => {
       match.status = "pending";
       match.requestedBy = requesterId;
       await match.save();
-      return formatMatch(match);
+      await notifyIncomingRequest(match, requesterId);
+      return broadcastMatch(match);
     }
     if (match.status === "pending") {
       throw createError("A chat request is already pending", 400);
@@ -69,7 +96,8 @@ exports.requestChat = async (requesterId, otherUserId) => {
     requestedBy: requesterId,
   });
 
-  return formatMatch(match);
+  await notifyIncomingRequest(match, requesterId);
+  return broadcastMatch(match);
 };
 
 exports.respondToRequest = async (matchId, userId, action) => {
@@ -103,7 +131,7 @@ exports.respondToRequest = async (matchId, userId, action) => {
   }
 
   await match.save();
-  return formatMatch(match);
+  return broadcastMatch(match);
 };
 
 exports.getMatchesForUser = async (userId) => {

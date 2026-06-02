@@ -3,6 +3,8 @@ const Chat = require("../models/Chat");
 const { formatMessage } = require("../utils/formatMessage");
 const { createError } = require("../utils/appError");
 const matchService = require("./matchService");
+const pushService = require("./pushService");
+const User = require("../models/User");
 
 let io;
 
@@ -86,6 +88,20 @@ exports.sendMessage = async (chatId, userId, { senderId, text, type, imageUrl })
   );
 
   emitMessageEvents(chatId, message, updatedChat);
+
+  if (otherParticipantId && type !== "system") {
+    const sender = await User.findById(userId).select("name");
+    const preview =
+      type === "image" ? "Sent a photo" : String(text).slice(0, 200);
+    pushService
+      .notifyNewMessage(otherParticipantId, {
+        chatId: chatId.toString(),
+        senderId: userId.toString(),
+        senderName: sender?.name || "Someone",
+        preview,
+      })
+      .catch(() => {});
+  }
 
   return formatMessage(message);
 };
