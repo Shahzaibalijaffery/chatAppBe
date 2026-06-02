@@ -140,6 +140,7 @@ app.use("/api/discovery", require("./routes/discovery"));
 app.use("/api/matches", require("./routes/matches"));
 app.use("/api/chats", require("./routes/chats"));
 app.use("/api/chats", require("./routes/messages")); // Messages routes are under /api/chats/:chatId/messages
+app.use("/api/uploads", require("./routes/uploads"));
 
 // Health check route
 app.get("/api/health", (req, res) => {

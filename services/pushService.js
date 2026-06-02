@@ -26,7 +26,19 @@ function initFirebaseAdmin() {
       return true;
     }
   } catch (err) {
-    console.warn("[push] Firebase Admin init failed:", err.message);
+    const hint = (() => {
+      const v = typeof jsonInline === "string" ? jsonInline.trim() : "";
+      // Common mistake: people paste a file path into the JSON env var.
+      if (v && !v.startsWith("{") && v.length < 200) {
+        return "Check FIREBASE_SERVICE_ACCOUNT_JSON: it should be raw JSON starting with `{` (not a path).";
+      }
+      return null;
+    })();
+    console.warn(
+      "[push] Firebase Admin init failed:",
+      err.message,
+      hint ? `| ${hint}` : ""
+    );
   }
 
   return false;

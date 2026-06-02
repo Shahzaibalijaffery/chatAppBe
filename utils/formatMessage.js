@@ -8,6 +8,7 @@ function formatMessage(message) {
     createdAt: message.createdAt.toISOString(),
     readAt: message.readAt ? message.readAt.toISOString() : null,
     imageUrl: message.imageUrl || null,
+    audioUrl: message.audioUrl || null,
   };
 }
 

@@ -18,7 +18,7 @@ const messageSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['text', 'image', 'system'],
+    enum: ['text', 'image', 'voice', 'system'],
     default: 'text'
   },
   readAt: {
@@ -26,6 +26,10 @@ const messageSchema = new mongoose.Schema({
     default: null
   },
   imageUrl: {
+    type: String,
+    default: null
+  },
+  audioUrl: {
     type: String,
     default: null
   }

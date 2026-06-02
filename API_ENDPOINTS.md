@@ -548,10 +548,11 @@ All error responses follow this format:
   chatId: string;
   senderId: string;
   text: string;
-  type: "text" | "image" | "system";
+  type: "text" | "image" | "voice" | "system";
   createdAt: string; // ISO 8601
   readAt?: string | null; // ISO 8601, null if unread
   imageUrl?: string | null; // Required if type is "image"
+  audioUrl?: string | null; // Required if type is "voice"
 }
 ```
 
@@ -562,6 +563,43 @@ All error responses follow this format:
   data?: T; // The actual response data
   error?: string; // Error message if success is false
   message?: string; // Optional success/error message
+}
+```
+
+---
+
+## 8. Upload Endpoints (Cloudflare R2)
+
+### 8.1 Create Signed Upload URL
+**POST** `/api/uploads/presign`  
+**Access:** Private
+
+**Request Body:**
+```json
+{
+  "kind": "profile-image",
+  "contentType": "image/jpeg",
+  "extension": "jpg"
+}
+```
+
+`kind` supports:
+- `profile-image`
+- `message-image`
+- `voice-message`
+
+Video uploads are intentionally not supported yet.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "uploadUrl": "https://...signed-url...",
+    "fileUrl": "https://cdn.example.com/profile-image/userId/....jpg",
+    "key": "profile-image/userId/....jpg",
+    "expiresInSeconds": 300
+  }
 }
 ```
 

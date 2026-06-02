@@ -47,7 +47,11 @@ function emitMessageEvents(chatId, message, updatedChat) {
   });
 }
 
-exports.sendMessage = async (chatId, userId, { senderId, text, type, imageUrl }) => {
+exports.sendMessage = async (
+  chatId,
+  userId,
+  { senderId, text, type, imageUrl, audioUrl }
+) => {
   if (!senderId || !text || !type) {
     throw createError("senderId, text, and type are required", 400);
   }
@@ -56,12 +60,15 @@ exports.sendMessage = async (chatId, userId, { senderId, text, type, imageUrl })
     throw createError("Not authorized to send message as this user", 403);
   }
 
-  if (!["text", "image", "system"].includes(type)) {
-    throw createError('Type must be "text", "image", or "system"', 400);
+  if (!["text", "image", "voice", "system"].includes(type)) {
+    throw createError('Type must be "text", "image", "voice", or "system"', 400);
   }
 
   if (type === "image" && !imageUrl) {
     throw createError("imageUrl is required for image messages", 400);
+  }
+  if (type === "voice" && !audioUrl) {
+    throw createError("audioUrl is required for voice messages", 400);
   }
 
   const chat = await getChatForUser(chatId, userId);
@@ -78,6 +85,7 @@ exports.sendMessage = async (chatId, userId, { senderId, text, type, imageUrl })
     text,
     type,
     imageUrl: imageUrl || null,
+    audioUrl: audioUrl || null,
     readAt: null,
   });
 
