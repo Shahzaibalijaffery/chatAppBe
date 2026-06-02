@@ -88,16 +88,20 @@ app.use((req, res, next) => {
   if (req.path === "/api/health") {
     return next();
   }
-  
+
   if (!isDbConnected && mongoose.connection.readyState !== 1) {
     return res.status(503).json({
       success: false,
       error: "Database connection not available. Please try again in a moment.",
-      dbState: mongoose.connection.readyState === 0 ? "disconnected" : 
-               mongoose.connection.readyState === 2 ? "connecting" : "disconnecting"
+      dbState:
+        mongoose.connection.readyState === 0
+          ? "disconnected"
+          : mongoose.connection.readyState === 2
+            ? "connecting"
+            : "disconnecting",
     });
   }
-  
+
   next();
 });
 
@@ -111,7 +115,7 @@ process.on("SIGINT", async () => {
 async function connectDatabase() {
   await mongoose.connect(
     process.env.MONGODB_URI || "mongodb://localhost:27017/chatapp",
-    mongooseOptions
+    mongooseOptions,
   );
   console.log("MongoDB connected successfully");
   console.log("Database:", mongoose.connection.name);
@@ -120,7 +124,7 @@ async function connectDatabase() {
   const userCount = await User.countDocuments();
   if (userCount === 0) {
     console.warn(
-      "\n⚠ No users in database. Seed demo data:\n   npm run seed:companion\n   Login: ahmed.hussain@mychat.demo / test1234\n"
+      "\n⚠ No users in database. Seed demo data:\n   npm run seed:companion\n   Login: ahmed.hussain@mychat.demo / test1234\n",
     );
   } else {
     console.log(`Users in database: ${userCount}\n`);
@@ -158,7 +162,7 @@ io.on("connection", (socket) => {
       const decoded = jwt.verify(
         token,
         process.env.JWT_SECRET ||
-          "your_super_secret_jwt_key_change_this_in_production"
+          "your_super_secret_jwt_key_change_this_in_production",
       );
       socket.userId = decoded.id;
       void touchLastActive(decoded.id);
@@ -227,7 +231,7 @@ function startHttpServer() {
       .on("error", (err) => {
         if (err.code === "EADDRINUSE") {
           console.error(
-            `Port ${PORT} is already in use. Please use a different port or kill the process using this port.`
+            `Port ${PORT} is already in use. Please use a different port or kill the process using this port.`,
           );
           console.error(`To kill the process: kill -9 $(lsof -ti:${PORT})`);
         } else {

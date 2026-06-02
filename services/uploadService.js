@@ -3,7 +3,11 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { createError } = require("../utils/appError");
 
-const ALLOWED_KINDS = new Set(["profile-image", "message-image", "voice-message"]);
+const ALLOWED_KINDS = new Set([
+  "profile-image",
+  "message-image",
+  "voice-message",
+]);
 
 const KIND_TO_CONTENT_PREFIX = {
   "profile-image": "image/",
@@ -63,13 +67,8 @@ exports.createUploadUrl = async (userId, { kind, contentType, extension }) => {
     throw createError(`contentType must start with ${expectedPrefix}`, 400);
   }
 
-  const {
-    accountId,
-    accessKeyId,
-    secretAccessKey,
-    bucketName,
-    publicBaseUrl,
-  } = getR2Config();
+  const { accountId, accessKeyId, secretAccessKey, bucketName, publicBaseUrl } =
+    getR2Config();
 
   const key = buildObjectKey(kind, userId.toString(), extension);
   const client = getClient(accountId, accessKeyId, secretAccessKey);
@@ -87,4 +86,3 @@ exports.createUploadUrl = async (userId, { kind, contentType, extension }) => {
 
   return { uploadUrl, fileUrl, key, expiresInSeconds: 300 };
 };
-
