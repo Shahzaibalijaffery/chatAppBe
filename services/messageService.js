@@ -100,7 +100,9 @@ exports.sendMessage = async (chatId, userId, { senderId, text, type, imageUrl })
         senderName: sender?.name || "Someone",
         preview,
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn("[push] notifyNewMessage error:", err?.message || err);
+      });
   }
 
   return formatMessage(message);

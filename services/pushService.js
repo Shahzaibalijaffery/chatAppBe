@@ -47,10 +47,16 @@ async function removeInvalidTokens(userId, tokensToRemove) {
 }
 
 async function sendToUser(userId, { title, body, data }) {
-  if (!initFirebaseAdmin()) return;
+  if (!initFirebaseAdmin()) {
+    console.warn("[push] Firebase Admin not initialized (missing env/credentials?)");
+    return;
+  }
 
   const tokens = await getTokensForUser(userId);
-  if (!tokens.length) return;
+  if (!tokens.length) {
+    console.warn("[push] No FCM tokens for user", userId?.toString?.() || userId);
+    return;
+  }
 
   const payload = {
     tokens,
