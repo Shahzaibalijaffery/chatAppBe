@@ -19,7 +19,7 @@ function initFirebaseAdmin() {
     if (jsonPath) {
       const fs = require("fs");
       const credentials = JSON.parse(
-        fs.readFileSync(jsonPath, { encoding: "utf8" })
+        fs.readFileSync(jsonPath, { encoding: "utf8" }),
       );
       admin.initializeApp({ credential: admin.credential.cert(credentials) });
       enabled = true;
@@ -37,7 +37,7 @@ function initFirebaseAdmin() {
     console.warn(
       "[push] Firebase Admin init failed:",
       err.message,
-      hint ? `| ${hint}` : ""
+      hint ? `| ${hint}` : "",
     );
   }
 
@@ -54,19 +54,24 @@ async function removeInvalidTokens(userId, tokensToRemove) {
   if (!tokensToRemove.length) return;
   await User.updateOne(
     { _id: userId },
-    { $pull: { fcmTokens: { token: { $in: tokensToRemove } } } }
+    { $pull: { fcmTokens: { token: { $in: tokensToRemove } } } },
   );
 }
 
 async function sendToUser(userId, { title, body, data }) {
   if (!initFirebaseAdmin()) {
-    console.warn("[push] Firebase Admin not initialized (missing env/credentials?)");
+    console.warn(
+      "[push] Firebase Admin not initialized (missing env/credentials?)",
+    );
     return;
   }
 
   const tokens = await getTokensForUser(userId);
   if (!tokens.length) {
-    console.warn("[push] No FCM tokens for user", userId?.toString?.() || userId);
+    console.warn(
+      "[push] No FCM tokens for user",
+      userId?.toString?.() || userId,
+    );
     return;
   }
 
@@ -77,7 +82,7 @@ async function sendToUser(userId, { title, body, data }) {
       Object.entries(data || {}).map(([key, value]) => [
         key,
         value == null ? "" : String(value),
-      ])
+      ]),
     ),
     android: {
       priority: "high",
@@ -111,7 +116,7 @@ async function sendToUser(userId, { title, body, data }) {
 
 exports.notifyNewMessage = async (
   recipientId,
-  { chatId, senderId, senderName, preview }
+  { chatId, senderId, senderName, preview },
 ) => {
   const title = senderName || "New message";
   const body =
@@ -131,7 +136,7 @@ exports.notifyNewMessage = async (
 
 exports.notifyChatRequest = async (
   recipientId,
-  { matchId, fromUserId, fromName }
+  { matchId, fromUserId, fromName },
 ) => {
   await sendToUser(recipientId, {
     title: "Chat request",

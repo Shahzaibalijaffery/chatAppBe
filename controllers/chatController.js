@@ -11,9 +11,12 @@ exports.getAllChats = async (req, res, next) => {
 
 exports.getChatById = async (req, res, next) => {
   try {
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    const before = typeof req.query.before === "string" ? req.query.before : undefined;
     const data = await chatService.getChatById(
       req.params.chatId,
-      req.user._id
+      req.user._id,
+      { limit, before },
     );
     res.json({ success: true, data });
   } catch (err) {

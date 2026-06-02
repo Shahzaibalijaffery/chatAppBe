@@ -74,7 +74,22 @@ exports.getAllChats = async (userId) => {
   });
 };
 
-exports.getChatById = async (chatId, userId) => {
+const DEFAULT_CHAT_PAGE_SIZE = 40;
+const MAX_CHAT_PAGE_SIZE = 100;
+
+function normalizePageOptions(options = {}) {
+  const parsedLimit = Number(options.limit);
+  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0
+    ? Math.min(Math.floor(parsedLimit), MAX_CHAT_PAGE_SIZE)
+    : DEFAULT_CHAT_PAGE_SIZE;
+  const beforeDate =
+    options.before && !Number.isNaN(new Date(options.before).getTime())
+      ? new Date(options.before)
+      : null;
+  return { limit, beforeDate };
+}
+
+exports.getChatById = async (chatId, userId, options = {}) => {
   const chat = await Chat.findById(chatId);
   if (!chat) {
     throw createError("Chat not found", 404);
@@ -82,11 +97,31 @@ exports.getChatById = async (chatId, userId) => {
 
   assertUserInChat(chat, userId);
 
-  const messages = await Message.find({ chatId: chat._id }).sort({
-    createdAt: 1,
-  });
+  const { limit, beforeDate } = normalizePageOptions(options);
+  const query = { chatId: chat._id };
+  if (beforeDate) {
+    query.createdAt = { $lt: beforeDate };
+  }
 
-  return formatChat(chat, messages);
+  const desc = await Message.find(query)
+    .sort({ createdAt: -1 })
+    .limit(limit + 1);
+  const hasMore = desc.length > limit;
+  const page = hasMore ? desc.slice(0, limit) : desc;
+  const messages = page.reverse();
+
+  const formatted = formatChat(chat, messages);
+  return {
+    ...formatted,
+    pageInfo: {
+      hasMore,
+      nextBefore:
+        messages.length > 0
+          ? messages[0].createdAt.toISOString()
+          : beforeDate?.toISOString() || null,
+      limit,
+    },
+  };
 };
 
 exports.createChat = async (userId, otherUserId, currentUserId) => {

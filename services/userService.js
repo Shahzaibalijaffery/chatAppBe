@@ -22,9 +22,10 @@ exports.getPublicUser = async (currentUserId, targetUserId) => {
     throw createError("User not found", 404);
   }
 
-  const currentUser = await User.findById(currentUserId).select("blockedUserIds");
+  const currentUser =
+    await User.findById(currentUserId).select("blockedUserIds");
   const blocked = new Set(
-    (currentUser?.blockedUserIds || []).map((id) => id.toString())
+    (currentUser?.blockedUserIds || []).map((id) => id.toString()),
   );
 
   if (blocked.has(targetUserId.toString())) {
@@ -37,7 +38,9 @@ exports.getPublicUser = async (currentUserId, targetUserId) => {
   }
 
   if (
-    user.blockedUserIds?.some((id) => id.toString() === currentUserId.toString())
+    user.blockedUserIds?.some(
+      (id) => id.toString() === currentUserId.toString(),
+    )
   ) {
     throw createError("User not found", 404);
   }
@@ -52,9 +55,10 @@ exports.getPublicUser = async (currentUserId, targetUserId) => {
 exports.getAllUsers = async (currentUserId) => {
   await expireAllStaleInterests();
 
-  const currentUser = await User.findById(currentUserId).select("blockedUserIds");
+  const currentUser =
+    await User.findById(currentUserId).select("blockedUserIds");
   const blocked = new Set(
-    (currentUser?.blockedUserIds || []).map((id) => id.toString())
+    (currentUser?.blockedUserIds || []).map((id) => id.toString()),
   );
 
   const users = await User.find({ _id: { $ne: currentUserId } })
@@ -65,7 +69,9 @@ exports.getAllUsers = async (currentUserId) => {
     .filter(
       (user) =>
         !blocked.has(user._id.toString()) &&
-        !user.blockedUserIds?.some((id) => id.toString() === currentUserId.toString())
+        !user.blockedUserIds?.some(
+          (id) => id.toString() === currentUserId.toString(),
+        ),
     )
     .map((user) => formatUser(user, { hideExact: true }));
 };
@@ -104,15 +110,18 @@ exports.updateUser = async (userId, currentUserId, updates) => {
     existing = await expireUserInterestsIfStale(existing);
     const interestsPatch = buildInterestsTodayUpdate(
       existing,
-      updates.interestsToday
+      updates.interestsToday,
     );
     Object.assign(updateData, interestsPatch);
   }
 
-  if (updates.location?.latitude != null && updates.location?.longitude != null) {
+  if (
+    updates.location?.latitude != null &&
+    updates.location?.longitude != null
+  ) {
     const areaName = await reverseGeocode(
       updates.location.latitude,
-      updates.location.longitude
+      updates.location.longitude,
     );
     updateData.location = {
       ...updates.location,
@@ -133,7 +142,11 @@ exports.updateUser = async (userId, currentUserId, updates) => {
   return formatUser(user);
 };
 
-exports.updateLocation = async (userId, currentUserId, { latitude, longitude }) => {
+exports.updateLocation = async (
+  userId,
+  currentUserId,
+  { latitude, longitude },
+) => {
   if (userId.toString() !== currentUserId.toString()) {
     throw createError("Not authorized", 403);
   }
@@ -168,7 +181,7 @@ exports.updateLocation = async (userId, currentUserId, { latitude, longitude }) 
         city: areaName || "Nearby area",
       },
     },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   );
 
   if (!user) {
@@ -220,7 +233,7 @@ exports.registerFcmToken = async (userId, { token, platform }) => {
 
   const normalized = token.trim();
   const next = (user.fcmTokens || []).filter(
-    (entry) => entry.token !== normalized
+    (entry) => entry.token !== normalized,
   );
   next.push({
     token: normalized,
@@ -239,7 +252,7 @@ exports.removeFcmToken = async (userId, token) => {
   }
   await User.updateOne(
     { _id: userId },
-    { $pull: { fcmTokens: { token: token.trim() } } }
+    { $pull: { fcmTokens: { token: token.trim() } } },
   );
   return { success: true };
 };

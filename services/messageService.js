@@ -14,7 +14,7 @@ exports.setSocketIO = (socketIO) => {
 
 function assertUserInChat(chat, userId) {
   const isMember = chat.participants.some(
-    (participantId) => participantId.toString() === userId.toString()
+    (participantId) => participantId.toString() === userId.toString(),
   );
   if (!isMember) {
     throw createError("Not authorized to access this chat", 403);
@@ -50,7 +50,7 @@ function emitMessageEvents(chatId, message, updatedChat) {
 exports.sendMessage = async (
   chatId,
   userId,
-  { senderId, text, type, imageUrl, audioUrl }
+  { senderId, text, type, imageUrl, audioUrl },
 ) => {
   if (!senderId || !text || !type) {
     throw createError("senderId, text, and type are required", 400);
@@ -61,7 +61,10 @@ exports.sendMessage = async (
   }
 
   if (!["text", "image", "voice", "system"].includes(type)) {
-    throw createError('Type must be "text", "image", "voice", or "system"', 400);
+    throw createError(
+      'Type must be "text", "image", "voice", or "system"',
+      400,
+    );
   }
 
   if (type === "image" && !imageUrl) {
@@ -73,7 +76,7 @@ exports.sendMessage = async (
 
   const chat = await getChatForUser(chatId, userId);
   const otherParticipantId = chat.participants.find(
-    (participantId) => participantId.toString() !== userId.toString()
+    (participantId) => participantId.toString() !== userId.toString(),
   );
   if (otherParticipantId) {
     await matchService.assertNotBlocked(userId, otherParticipantId);
@@ -92,7 +95,7 @@ exports.sendMessage = async (
   const updatedChat = await Chat.findByIdAndUpdate(
     chatId,
     { updatedAt: new Date() },
-    { new: true }
+    { new: true },
   );
 
   emitMessageEvents(chatId, message, updatedChat);
@@ -124,7 +127,7 @@ exports.markMessagesAsRead = async (chatId, userId, bodyUserId) => {
   if (bodyUserId !== userId.toString()) {
     throw createError(
       "Not authorized to mark messages as read for this user",
-      403
+      403,
     );
   }
 
@@ -136,7 +139,7 @@ exports.markMessagesAsRead = async (chatId, userId, bodyUserId) => {
       senderId: { $ne: userId },
       readAt: null,
     },
-    { readAt: new Date() }
+    { readAt: new Date() },
   );
 
   return { message: "Messages marked as read" };
