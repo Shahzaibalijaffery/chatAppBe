@@ -568,9 +568,46 @@ All error responses follow this format:
 
 ---
 
-## 8. Upload Endpoints (Cloudflare R2)
+## 8. Discovery Endpoints
 
-### 8.1 Create Signed Upload URL
+### 8.1 Nearby companions (radius-based)
+**GET** `/api/discovery/nearby?radiusKm=5`  
+**POST** `/api/discovery/nearby/refresh?radiusKm=5` — optional body `{ latitude, longitude }`  
+**Access:** Private · requires today's interests and saved location.
+
+### 8.2 Explore companions (random, not radius-based)
+**GET** `/api/discovery/explore?limit=30`  
+**Access:** Private · requires today's interests (location optional).
+
+Returns a **reshuffled** list on each request. Prefers users in the same `location.country` when known (~75%), then fills from elsewhere. Still requires at least one shared interest for today.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "user": { "id": "...", "name": "...", "location": { "areaName": "...", "country": "Pakistan" } },
+      "distance": 412.5,
+      "sharedInterestsCount": 2,
+      "areaName": "Lahore, Punjab",
+      "presence": { "isOnline": false, "lastActiveAt": "2026-06-02T12:00:00.000Z" }
+    }
+  ],
+  "meta": {
+    "viewerCountry": "Pakistan",
+    "totalEligible": 48
+  }
+}
+```
+
+`distance` is included only when both users have coordinates; otherwise use `areaName`.
+
+---
+
+## 9. Upload Endpoints (Cloudflare R2)
+
+### 9.1 Create Signed Upload URL
 **POST** `/api/uploads/presign`  
 **Access:** Private
 

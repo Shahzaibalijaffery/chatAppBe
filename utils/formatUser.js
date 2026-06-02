@@ -7,6 +7,7 @@ function formatLocation(user, { hideExact = false } = {}) {
     return {
       areaName:
         user.location.areaName || user.location.city || "Nearby area",
+      country: user.location.country || null,
     };
   }
 
@@ -15,6 +16,7 @@ function formatLocation(user, { hideExact = false } = {}) {
     longitude: user.location.longitude,
     city: user.location.city || null,
     areaName: user.location.areaName || user.location.city || null,
+    country: user.location.country || null,
   };
 }
 

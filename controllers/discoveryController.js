@@ -54,3 +54,20 @@ exports.getNearby = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.getExplore = async (req, res, next) => {
+  try {
+    const limit = req.query.limit;
+    const result = await discoveryService.getExploreUsers(
+      req.user._id.toString(),
+      limit
+    );
+    res.json({
+      success: true,
+      data: result.profiles,
+      meta: result.meta,
+    });
+  } catch (err) {
+    next(err);
+  }
+};

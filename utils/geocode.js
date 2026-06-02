@@ -21,16 +21,20 @@ async function reverseGeocode(latitude, longitude) {
   const city = address.city || address.town || address.village;
   const state = address.state;
 
+  let areaName = null;
   if (suburb && city) {
-    return `${suburb} ${city}`;
+    areaName = `${suburb} ${city}`;
+  } else if (city && state) {
+    areaName = `${city}, ${state}`;
+  } else if (data.display_name) {
+    areaName = data.display_name.split(",").slice(0, 2).join(",").trim();
+  } else {
+    areaName = city || state || null;
   }
-  if (city && state) {
-    return `${city}, ${state}`;
-  }
-  if (data.display_name) {
-    return data.display_name.split(",").slice(0, 2).join(",").trim();
-  }
-  return city || state || null;
+
+  const country = address.country || null;
+
+  return { areaName, city: city || null, country };
 }
 
 module.exports = { reverseGeocode };

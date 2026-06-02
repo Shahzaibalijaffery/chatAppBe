@@ -119,14 +119,18 @@ exports.updateUser = async (userId, currentUserId, updates) => {
     updates.location?.latitude != null &&
     updates.location?.longitude != null
   ) {
-    const areaName = await reverseGeocode(
+    const geocoded = await reverseGeocode(
       updates.location.latitude,
       updates.location.longitude,
     );
     updateData.location = {
       ...updates.location,
-      areaName: areaName || updates.location.areaName || updates.location.city,
-      city: updates.location.city || areaName,
+      areaName:
+        geocoded?.areaName ||
+        updates.location.areaName ||
+        updates.location.city,
+      city: updates.location.city || geocoded?.city || geocoded?.areaName,
+      country: geocoded?.country || updates.location.country || null,
     };
   }
 
@@ -161,15 +165,17 @@ exports.updateLocation = async (
     throw createError("Invalid latitude or longitude", 400);
   }
 
-  let areaName = null;
+  let geocoded = null;
   try {
-    areaName = await Promise.race([
+    geocoded = await Promise.race([
       reverseGeocode(lat, lng),
       new Promise((resolve) => setTimeout(() => resolve(null), 4000)),
     ]);
   } catch {
-    areaName = null;
+    geocoded = null;
   }
+
+  const areaLabel = geocoded?.areaName || "Nearby area";
 
   const user = await User.findByIdAndUpdate(
     userId,
@@ -177,8 +183,9 @@ exports.updateLocation = async (
       location: {
         latitude: lat,
         longitude: lng,
-        areaName: areaName || "Nearby area",
-        city: areaName || "Nearby area",
+        areaName: areaLabel,
+        city: geocoded?.city || areaLabel,
+        country: geocoded?.country || null,
       },
     },
     { new: true, runValidators: true },
