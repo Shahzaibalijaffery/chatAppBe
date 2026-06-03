@@ -136,11 +136,20 @@ exports.notifyNewMessage = async (
 
 exports.notifyChatRequest = async (
   recipientId,
-  { matchId, fromUserId, fromName },
+  { matchId, fromUserId, fromName, postPreview, postCategory, postArea },
 ) => {
+  const area = postArea || "nearby";
+  const preview =
+    postPreview && postPreview.length > 60
+      ? `${postPreview.slice(0, 57)}...`
+      : postPreview;
+  const body = preview
+    ? `${fromName || "Someone"} — re: ${postCategory || "post"} in ${area}: ${preview}`
+    : `${fromName || "Someone"} wants to message you about a post in ${area}`;
+
   await sendToUser(recipientId, {
-    title: "Chat request",
-    body: `${fromName || "Someone"} wants to chat with you`,
+    title: "Message request",
+    body,
     data: {
       type: "request",
       matchId,

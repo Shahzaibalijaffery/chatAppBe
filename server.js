@@ -124,7 +124,7 @@ async function connectDatabase() {
   const userCount = await User.countDocuments();
   if (userCount === 0) {
     console.warn(
-      "\n⚠ No users in database. Seed demo data:\n   npm run seed:companion\n   Login: ahmed.hussain@mychat.demo / test1234\n",
+      "\n⚠ No users in database. Seed demo data:\n   npm run seed:companion\n   npm run seed:posts\n   Login: ahmed.hussain@mychat.demo / test1234\n",
     );
   } else {
     console.log(`Users in database: ${userCount}\n`);
@@ -140,7 +140,7 @@ realtimeService.setSocketIO(io);
 // Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/users", require("./routes/users"));
-app.use("/api/discovery", require("./routes/discovery"));
+app.use("/api/posts", require("./routes/posts"));
 app.use("/api/matches", require("./routes/matches"));
 app.use("/api/chats", require("./routes/chats"));
 app.use("/api/chats", require("./routes/messages")); // Messages routes are under /api/chats/:chatId/messages
@@ -242,8 +242,19 @@ function startHttpServer() {
   });
 }
 
+const { expireStalePosts } = require("./utils/postExpiry");
+const POST_EXPIRY_INTERVAL_MS = 5 * 60 * 1000;
+
 connectDatabase()
-  .then(() => startHttpServer())
+  .then(async () => {
+    await expireStalePosts();
+    setInterval(() => {
+      expireStalePosts().catch((err) => {
+        console.error("Post expiry job failed:", err);
+      });
+    }, POST_EXPIRY_INTERVAL_MS);
+    return startHttpServer();
+  })
   .catch((err) => {
     console.error("Failed to start server:", err);
     process.exit(1);

@@ -10,7 +10,22 @@ const CENTER_LNG = Number(process.env.SEED_LNG) || 73.0435;
 
 const PASSWORD = "test1234";
 
-/** Old accounts to remove from DB when seeding */
+const COUNTRY = "Pakistan";
+
+const DAILY_INTERESTS = [
+  "cafe",
+  "food",
+  "hiking",
+  "walking",
+  "photography",
+  "shopping",
+  "movies",
+  "gym",
+  "reading",
+  "music",
+];
+
+/** Old accounts to remove from DB when seeding with --clean */
 const LEGACY_EMAILS = [
   "test@example.com",
   "test1@example.com",
@@ -29,6 +44,193 @@ const LEGACY_EMAILS = [
   "mariam.companion@test.com",
   "danish.companion@test.com",
 ];
+
+/** City centers — hundreds of km apart for Explore / distance testing */
+const PAKISTAN_CITIES = [
+  {
+    slug: "islamabad",
+    city: "Islamabad",
+    lat: 33.6844,
+    lng: 73.0479,
+    areas: ["F-6 Markaz", "F-7", "Blue Area", "G-9"],
+  },
+  {
+    slug: "lahore",
+    city: "Lahore",
+    lat: 31.5204,
+    lng: 74.3587,
+    areas: ["Gulberg", "DHA Phase 5", "Liberty Market", "Johar Town"],
+  },
+  {
+    slug: "karachi",
+    city: "Karachi",
+    lat: 24.8607,
+    lng: 67.0011,
+    areas: ["Clifton", "DHA Karachi", "Saddar", "Bahria Town Karachi"],
+  },
+  {
+    slug: "peshawar",
+    city: "Peshawar",
+    lat: 34.0151,
+    lng: 71.5249,
+    areas: ["University Town", "Hayatabad", "Saddar Peshawar", "Regi Model Town"],
+  },
+  {
+    slug: "quetta",
+    city: "Quetta",
+    lat: 30.1798,
+    lng: 66.975,
+    areas: ["Jinnah Town", "Satellite Town", "Brewery Road", "Sariab Road"],
+  },
+  {
+    slug: "multan",
+    city: "Multan",
+    lat: 30.1575,
+    lng: 71.5249,
+    areas: ["Gulgasht Colony", "Cantt", "Bosan Road", "Shah Rukn-e-Alam"],
+  },
+  {
+    slug: "faisalabad",
+    city: "Faisalabad",
+    lat: 31.4504,
+    lng: 73.135,
+    areas: ["D Ground", "Susan Road", "Madina Town", "Canal Road"],
+  },
+  {
+    slug: "hyderabad",
+    city: "Hyderabad",
+    lat: 25.396,
+    lng: 68.3578,
+    areas: ["Latifabad", "Qasimabad", "Auto Bhan Road", "Saddar Hyderabad"],
+  },
+  {
+    slug: "gilgit",
+    city: "Gilgit",
+    lat: 35.9208,
+    lng: 74.3144,
+    areas: ["Jutial", "Konodas", "Nagar Colony", "Gilgit Bazaar"],
+  },
+  {
+    slug: "muzaffarabad",
+    city: "Muzaffarabad",
+    lat: 34.37,
+    lng: 73.47,
+    areas: ["Upper Chattar", "Lower Chattar", "Mirpur Road", "Domel"],
+  },
+  {
+    slug: "bahawalpur",
+    city: "Bahawalpur",
+    lat: 29.3956,
+    lng: 71.6836,
+    areas: ["Model Town BWP", "Satellite Town", "Civil Hospital Road", "DHA Bahawalpur"],
+  },
+  {
+    slug: "sialkot",
+    city: "Sialkot",
+    lat: 32.4945,
+    lng: 74.5229,
+    areas: ["Cantt", "Paris Road", "Ugoki", "Daska Road"],
+  },
+  {
+    slug: "skardu",
+    city: "Skardu",
+    lat: 35.2971,
+    lng: 75.6339,
+    areas: ["Skardu Bazaar", "Kharpocho", "Hussainabad", "Satpara Road"],
+  },
+];
+
+const FIRST_NAMES = [
+  "Ahmed",
+  "Ayesha",
+  "Hassan",
+  "Sara",
+  "Omar",
+  "Zainab",
+  "Bilal",
+  "Fatima",
+  "Usman",
+  "Mariam",
+  "Danish",
+  "Hira",
+  "Imran",
+  "Nadia",
+  "Kamran",
+  "Sana",
+  "Faisal",
+  "Rabia",
+  "Tariq",
+  "Amna",
+  "Waqas",
+  "Laiba",
+  "Hamza",
+  "Mehwish",
+  "Asad",
+  "Kinza",
+  "Saad",
+  "Hina",
+  "Babar",
+  "Iqra",
+  "Zeeshan",
+  "Mahnoor",
+  "Arslan",
+  "Sadia",
+  "Rizwan",
+  "Anum",
+  "Shahzad",
+  "Eman",
+  "Noman",
+  "Areeba",
+  "Yasir",
+  "Hafsa",
+  "Junaid",
+  "Palwasha",
+  "Adnan",
+  "Sumbul",
+  "Khurram",
+  "Maha",
+  "Salman",
+  "Tooba",
+  "Farhan",
+  "Aleena",
+];
+
+const LAST_NAMES = [
+  "Hussain",
+  "Khan",
+  "Ali",
+  "Malik",
+  "Farooq",
+  "Raza",
+  "Ahmed",
+  "Noor",
+  "Sheikh",
+  "Iqbal",
+  "Shah",
+  "Qureshi",
+  "Baig",
+  "Mirza",
+  "Butt",
+  "Chaudhry",
+  "Siddiqui",
+  "Akram",
+  "Haider",
+  "Yousaf",
+];
+
+const BIO_TEMPLATES = [
+  "Exploring {area} — always up for café and food.",
+  "Weekend walks and photography around {city}.",
+  "Gym, hiking, and good coffee in {area}.",
+  "Movies and casual hangouts in {city}.",
+  "Shopping and brunch spots in {area}.",
+  "Live music and reading cafés near {area}.",
+  "Food tours and street photography in {city}.",
+  "Trail runs and outdoor plans around {area}.",
+];
+
+const USERS_PER_CITY = 4;
+const TARGET_USER_COUNT = PAKISTAN_CITIES.length * USERS_PER_CITY;
 
 function offsetKm(lat, lng, distanceKm, bearingDeg) {
   const R = 6371;
@@ -51,161 +253,86 @@ function offsetKm(lat, lng, distanceKm, bearingDeg) {
   };
 }
 
-/** Demo users near Islamabad — email: firstname.lastname@mychat.demo */
-const DEMO_USERS = [
-  {
-    name: "Ahmed Hussain",
-    email: "ahmed.hussain@mychat.demo",
-    gender: "male",
-    age: 26,
-    lastActiveAt: new Date(),
-    bio: "Local explorer — café hops and evening walks in Islamabad.",
-    photos: ["https://i.pravatar.cc/300?u=ahmedhussain"],
-    areaName: "F-6 Markaz, Islamabad",
-    offset: { km: 0, bearing: 0 },
-    interestsToday: ["cafe", "food", "walking"],
-  },
-  {
-    name: "Ayesha Khan",
-    email: "ayesha.khan@mychat.demo",
-    gender: "female",
-    age: 24,
-    bio: "Coffee walks and weekend hikes around the city.",
-    photos: ["https://i.pravatar.cc/300?u=ayeshakhan"],
-    areaName: "F-6, Islamabad",
-    offset: { km: 2.2, bearing: 45 },
-    interestsToday: ["cafe", "walking", "photography"],
-  },
-  {
-    name: "Hassan Ali",
-    email: "hassan.ali@mychat.demo",
-    gender: "male",
-    age: 27,
-    bio: "Food explorer — always trying new spots in F-7.",
-    photos: ["https://i.pravatar.cc/300?u=hassanali"],
-    areaName: "F-7, Islamabad",
-    offset: { km: 4.5, bearing: 120 },
-    interestsToday: ["food", "cafe", "movies"],
-  },
-  {
-    name: "Sara Malik",
-    email: "sara.malik@mychat.demo",
-    gender: "female",
-    age: 22,
-    bio: "Photography and shopping in Blue Area.",
-    photos: ["https://i.pravatar.cc/300?u=saramalik"],
-    areaName: "Blue Area, Islamabad",
-    offset: { km: 5.8, bearing: 200 },
-    interestsToday: ["photography", "shopping", "cafe"],
-  },
-  {
-    name: "Omar Farooq",
-    email: "omar.farooq@mychat.demo",
-    gender: "male",
-    age: 29,
-    bio: "Margalla trail runs on weekends.",
-    photos: ["https://i.pravatar.cc/300?u=omarfarooq"],
-    areaName: "G-9, Islamabad",
-    offset: { km: 7.2, bearing: 280 },
-    interestsToday: ["hiking", "walking", "gym"],
-  },
-  {
-    name: "Zainab Raza",
-    email: "zainab.raza@mychat.demo",
-    gender: "female",
-    age: 26,
-    bio: "Book café lover in F-6.",
-    photos: ["https://i.pravatar.cc/300?u=zainabraza"],
-    areaName: "F-6, Islamabad",
-    offset: { km: 3.1, bearing: 10 },
-    interestsToday: ["cafe", "reading", "music"],
-  },
-  {
-    name: "Bilal Ahmed",
-    email: "bilal.ahmed@mychat.demo",
-    gender: "male",
-    age: 31,
-    bio: "Gym mornings, food tours at night.",
-    photos: ["https://i.pravatar.cc/300?u=bilahmed"],
-    areaName: "F-8, Islamabad",
-    offset: { km: 6.4, bearing: 160 },
-    interestsToday: ["gym", "food", "walking"],
-  },
-  {
-    name: "Fatima Noor",
-    email: "fatima.noor@mychat.demo",
-    gender: "female",
-    age: 23,
-    bio: "Movies and café dates nearby.",
-    photos: ["https://i.pravatar.cc/300?u=fatimanoor"],
-    areaName: "F-10, Islamabad",
-    offset: { km: 8.1, bearing: 90 },
-    interestsToday: ["movies", "cafe", "food"],
-  },
-  {
-    name: "Usman Sheikh",
-    email: "usman.sheikh@mychat.demo",
-    gender: "male",
-    age: 28,
-    bio: "Street photography around Islamabad.",
-    photos: ["https://i.pravatar.cc/300?u=usmansheikh"],
-    areaName: "G-10, Islamabad",
-    offset: { km: 9.3, bearing: 240 },
-    interestsToday: ["photography", "walking", "cafe"],
-  },
-  {
-    name: "Mariam Hussain",
-    email: "mariam.hussain@mychat.demo",
-    gender: "female",
-    age: 25,
-    bio: "Shopping and brunch in the city.",
-    photos: ["https://i.pravatar.cc/300?u=mariamhussain"],
-    areaName: "Centaurus vicinity, Islamabad",
-    offset: { km: 4.8, bearing: 70 },
-    interestsToday: ["shopping", "food", "cafe"],
-  },
-  {
-    name: "Danish Iqbal",
-    email: "danish.iqbal@mychat.demo",
-    gender: "male",
-    age: 30,
-    bio: "Live music and casual walks.",
-    photos: ["https://i.pravatar.cc/300?u=danishiqbal"],
-    areaName: "I-8, Islamabad",
-    offset: { km: 9.8, bearing: 310 },
-    interestsToday: ["music", "walking", "movies"],
-  },
-  {
-    name: "Hira Shah",
-    email: "hira.shah@mychat.demo",
-    gender: "female",
-    age: 25,
-    bio: "Yoga and hiking when the weather is good.",
-    photos: ["https://i.pravatar.cc/300?u=hirashah"],
-    areaName: "F-11, Islamabad",
-    offset: { km: 6.9, bearing: 220 },
-    interestsToday: ["hiking", "gym", "walking"],
-  },
-  {
-    name: "Imran Qureshi",
-    email: "imran.qureshi@mychat.demo",
-    gender: "male",
-    age: 32,
-    lastActiveAt: new Date(Date.now() - 8 * 60 * 1000),
-    bio: "Tech meetups and coffee in Blue Area.",
-    photos: ["https://i.pravatar.cc/300?u=imranqureshi"],
-    areaName: "Blue Area, Islamabad",
-    offset: { km: 5.2, bearing: 190 },
-    interestsToday: ["cafe", "food", "reading"],
-  },
-];
+function slugify(value) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.+|\.+$/g, "");
+}
+
+function pickInterests(index) {
+  const a = DAILY_INTERESTS[index % DAILY_INTERESTS.length];
+  const b = DAILY_INTERESTS[(index + 3) % DAILY_INTERESTS.length];
+  const c = DAILY_INTERESTS[(index + 6) % DAILY_INTERESTS.length];
+  return [...new Set([a, b, c])];
+}
+
+function buildDemoUsers() {
+  const users = [];
+  let globalIndex = 0;
+
+  for (const city of PAKISTAN_CITIES) {
+    for (let i = 0; i < USERS_PER_CITY; i += 1) {
+      const first = FIRST_NAMES[globalIndex % FIRST_NAMES.length];
+      const last = LAST_NAMES[(globalIndex * 7) % LAST_NAMES.length];
+      const name = `${first} ${last}`;
+      const areaName = `${city.areas[i % city.areas.length]}, ${city.city}`;
+      const bioTemplate = BIO_TEMPLATES[globalIndex % BIO_TEMPLATES.length];
+      const bio = bioTemplate
+        .replace("{area}", city.areas[i % city.areas.length])
+        .replace("{city}", city.city);
+
+      const isPrimary = city.slug === "islamabad" && i === 0;
+      const email = isPrimary
+        ? "ahmed.hussain@mychat.demo"
+        : `${slugify(first)}.${slugify(last)}.${city.slug}${i + 1}@mychat.demo`;
+
+      const jitterKm = 3 + (globalIndex % 6) * 1.25;
+      const jitterBearing = (globalIndex * 47 + i * 61) % 360;
+
+      const lastActiveAt =
+        globalIndex % 5 === 0
+          ? new Date(Date.now() - (globalIndex % 12) * 15 * 60 * 1000)
+          : new Date();
+
+      users.push({
+        name: isPrimary ? "Ahmed Hussain" : name,
+        email,
+        gender: globalIndex % 2 === 0 ? "male" : "female",
+        age: 22 + (globalIndex % 12),
+        bio,
+        photos: [
+          `https://i.pravatar.cc/300?u=${slugify(email)}`,
+        ],
+        areaName,
+        locationPin: {
+          lat: city.lat,
+          lng: city.lng,
+          city: city.city,
+          country: COUNTRY,
+        },
+        jitterKm,
+        jitterBearing,
+        interestsToday: pickInterests(globalIndex),
+        lastActiveAt,
+      });
+
+      globalIndex += 1;
+    }
+  }
+
+  return users;
+}
+
+const DEMO_USERS = buildDemoUsers();
 
 function buildUserDoc(profile, today) {
+  const pin = profile.locationPin;
   const { latitude, longitude } = offsetKm(
-    CENTER_LAT,
-    CENTER_LNG,
-    profile.offset.km,
-    profile.offset.bearing
+    pin?.lat ?? CENTER_LAT,
+    pin?.lng ?? CENTER_LNG,
+    profile.jitterKm ?? 0,
+    profile.jitterBearing ?? 0
   );
 
   return {
@@ -219,15 +346,19 @@ function buildUserDoc(profile, today) {
     location: {
       latitude,
       longitude,
-      city: "Islamabad",
+      city: pin?.city || "Islamabad",
       areaName: profile.areaName,
+      country: pin?.country || COUNTRY,
     },
     interestsToday: profile.interestsToday,
     interestsTodayUpdatedAt: today,
+    interestsTodayPeriodStartedAt: today,
+    interestsTodayUpdateCount: 0,
+    visibleInDiscovery: true,
     lastActiveAt: profile.lastActiveAt ?? today,
     preferences: {
-      ageRange: { min: 20, max: 35 },
-      maxDistance: 10,
+      ageRange: { min: 20, max: 40 },
+      maxDistance: 50,
       interests: profile.interestsToday,
     },
   };
@@ -237,7 +368,11 @@ module.exports = {
   CENTER_LAT,
   CENTER_LNG,
   PASSWORD,
+  COUNTRY,
   LEGACY_EMAILS,
   DEMO_USERS,
+  TARGET_USER_COUNT,
+  PAKISTAN_CITIES,
   buildUserDoc,
+  offsetKm,
 };

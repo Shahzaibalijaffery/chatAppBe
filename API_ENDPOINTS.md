@@ -568,40 +568,28 @@ All error responses follow this format:
 
 ---
 
-## 8. Discovery Endpoints
+## 8. Local posts (12h feed)
 
-### 8.1 Nearby companions (radius-based)
-**GET** `/api/discovery/nearby?radiusKm=5`  
-**POST** `/api/discovery/nearby/refresh?radiusKm=5` — optional body `{ latitude, longitude }`  
-**Access:** Private · requires today's interests and saved location.
+### 8.1 Feed
+**GET** `/api/posts/feed?radiusKm=50`  
+**Access:** Private · requires saved location.
 
-### 8.2 Explore companions (random, not radius-based)
-**GET** `/api/discovery/explore?limit=30`  
-**Access:** Private · requires today's interests (location optional).
+### 8.2 Create post
+**POST** `/api/posts`  
+**Body:** `{ "category": "cafe|food|traffic|event|alert|other", "text": "...", "photos": [] }`  
+Posts expire after **12 hours** (content and comments/reactions removed; DM requests keep `postSnapshot`).
 
-Returns a **reshuffled** list on each request. Prefers users in the same `location.country` when known (~75%), then fills from elsewhere. Still requires at least one shared interest for today.
+### 8.3 Post detail, comments, reactions
+**GET** `/api/posts/:postId`  
+**POST** `/api/posts/:postId/comments` — `{ "text": "..." }`  
+**PUT** `/api/posts/:postId/reactions` — `{ "type": "like|helpful" }`  
+**DELETE** `/api/posts/:postId/reactions`
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "user": { "id": "...", "name": "...", "location": { "areaName": "...", "country": "Pakistan" } },
-      "distance": 412.5,
-      "sharedInterestsCount": 2,
-      "areaName": "Lahore, Punjab",
-      "presence": { "isOnline": false, "lastActiveAt": "2026-06-02T12:00:00.000Z" }
-    }
-  ],
-  "meta": {
-    "viewerCountry": "Pakistan",
-    "totalEligible": 48
-  }
-}
-```
-
-`distance` is included only when both users have coordinates; otherwise use `areaName`.
+### 8.4 Message request (post-only DM source)
+**POST** `/api/posts/:postId/message-request` — `{ "otherUserId": "..." }`  
+Rules: commenter or reactor → author; author → engaged user; always **pending until accepted**.  
+**POST** `/api/matches/:matchId/respond` — `{ "action": "accept|reject" }`  
+Match includes `postId` and `postSnapshot` for Requests UI.
 
 ---
 

@@ -1,8 +1,8 @@
 /**
- * Seed demo users (real names, Islamabad area).
+ * Seed demo users across Pakistan (52 users, spread city centers).
  *
  *   npm run seed:companion
- *   npm run seed:companion -- --clean   # delete legacy test@example.com users first
+ *   npm run seed:companion -- --clean   # delete legacy test@example.com users only
  *
  * Login (main): ahmed.hussain@mychat.demo / test1234
  */
@@ -17,6 +17,7 @@ const {
   PASSWORD,
   LEGACY_EMAILS,
   DEMO_USERS,
+  TARGET_USER_COUNT,
   buildUserDoc,
 } = require("./seedData");
 
@@ -24,8 +25,8 @@ async function seed() {
   const clean = process.argv.includes("--clean");
   const today = new Date();
 
-  console.log("\n=== Demo users seed (Islamabad) ===");
-  console.log(`Center: ${CENTER_LAT}, ${CENTER_LNG}`);
+  console.log("\n=== Demo users seed (Pakistan — spread locations) ===");
+  console.log(`Users to seed: ${DEMO_USERS.length} (target ${TARGET_USER_COUNT})`);
   console.log(`Password (all): ${PASSWORD}\n`);
 
   if (clean) {

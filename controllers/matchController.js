@@ -23,8 +23,18 @@ exports.getMatchWithUser = async (req, res, next) => {
 
 exports.requestChat = async (req, res, next) => {
   try {
-    const { otherUserId } = req.body;
-    const data = await matchService.requestChat(req.user._id, otherUserId);
+    const { postId, otherUserId } = req.body;
+    if (!postId || !otherUserId) {
+      return res.status(400).json({
+        success: false,
+        error: "postId and otherUserId are required",
+      });
+    }
+    const data = await matchService.requestMessageFromPost(
+      req.user._id,
+      postId,
+      otherUserId
+    );
     res.status(201).json({ success: true, data });
   } catch (err) {
     next(err);

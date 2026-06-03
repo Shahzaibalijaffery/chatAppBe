@@ -1,21 +1,27 @@
 const Match = require("../models/Match");
 const User = require("../models/User");
 const { formatMatch } = require("../utils/formatMatch");
+const { buildPostSnapshot } = require("../utils/formatPost");
 const { createError } = require("../utils/appError");
 const realtimeService = require("./realtimeService");
 const pushService = require("./pushService");
+const postInteractionService = require("./postInteractionService");
 
-async function notifyIncomingRequest(match, requesterId) {
+async function notifyIncomingRequest(match, requesterId, postSnapshot) {
   const recipientId =
     match.userA.toString() === requesterId.toString()
       ? match.userB
       : match.userA;
   const requester = await User.findById(requesterId).select("name");
+  const area = postSnapshot?.areaName || "a nearby post";
   pushService
     .notifyChatRequest(recipientId, {
       matchId: match._id.toString(),
       fromUserId: requesterId.toString(),
       fromName: requester?.name || "Someone",
+      postPreview: postSnapshot?.textPreview || "",
+      postCategory: postSnapshot?.category || "other",
+      postArea: area,
     })
     .catch(() => {});
 }
@@ -59,33 +65,44 @@ exports.hasAcceptedMatch = async (userId1, userId2) => {
 
 exports.getMatchBetween = async (userId1, userId2) => {
   const [userA, userB] = sortPair(userId1, userId2);
-  const match = await Match.findOne({ userA, userB });
+  const match = await Match.findOne({ userA, userB }).sort({ updatedAt: -1 });
   return match ? formatMatch(match) : null;
 };
 
-exports.requestChat = async (requesterId, otherUserId) => {
-  if (requesterId.toString() === otherUserId.toString()) {
-    throw createError("Cannot request chat with yourself", 400);
-  }
+exports.requestMessageFromPost = async (requesterId, postId, otherUserId) => {
+  const { post, trigger } = await postInteractionService.assertCanRequestDm(
+    requesterId,
+    postId,
+    otherUserId
+  );
 
-  await exports.assertNotBlocked(requesterId, otherUserId);
+  const postSnapshot = {
+    ...buildPostSnapshot(post),
+    postCreatedAt: post.createdAt,
+  };
 
   const [userA, userB] = sortPair(requesterId, otherUserId);
   let match = await Match.findOne({ userA, userB });
 
   if (match) {
     if (match.status === "accepted") {
-      throw createError("You are already matched with this user", 400);
+      throw createError("You are already connected with this user", 400);
+    }
+    if (match.status === "pending") {
+      if (match.requestedBy.toString() === requesterId.toString()) {
+        throw createError("A message request is already pending", 400);
+      }
+      throw createError("Respond to their pending request first", 400);
     }
     if (match.status === "rejected") {
       match.status = "pending";
       match.requestedBy = requesterId;
+      match.postId = post._id;
+      match.postSnapshot = postSnapshot;
+      match.trigger = trigger;
       await match.save();
-      await notifyIncomingRequest(match, requesterId);
+      await notifyIncomingRequest(match, requesterId, postSnapshot);
       return broadcastMatch(match);
-    }
-    if (match.status === "pending") {
-      throw createError("A chat request is already pending", 400);
     }
   }
 
@@ -94,16 +111,19 @@ exports.requestChat = async (requesterId, otherUserId) => {
     userB,
     status: "pending",
     requestedBy: requesterId,
+    postId: post._id,
+    postSnapshot,
+    trigger,
   });
 
-  await notifyIncomingRequest(match, requesterId);
+  await notifyIncomingRequest(match, requesterId, postSnapshot);
   return broadcastMatch(match);
 };
 
 exports.respondToRequest = async (matchId, userId, action) => {
   const match = await Match.findById(matchId);
   if (!match) {
-    throw createError("Match request not found", 404);
+    throw createError("Message request not found", 404);
   }
 
   const isParticipant =
