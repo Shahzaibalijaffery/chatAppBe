@@ -6,12 +6,14 @@ const { createError } = require("../utils/appError");
 const ALLOWED_KINDS = new Set([
   "profile-image",
   "message-image",
+  "post-image",
   "voice-message",
 ]);
 
 const KIND_TO_CONTENT_PREFIX = {
   "profile-image": "image/",
   "message-image": "image/",
+  "post-image": "image/",
   "voice-message": "audio/",
 };
 

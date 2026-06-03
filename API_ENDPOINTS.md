@@ -578,7 +578,8 @@ Returns nearby posts within `radiusKm`, plus **your own active posts** (always i
 
 ### 8.2 Create post
 **POST** `/api/posts`  
-**Body:** `{ "category": "cafe|food|traffic|event|alert|other", "text": "...", "photos": [] }`  
+**Body:** `{ "category": "cafe|food|traffic|event|alert|other", "text": "..." (required), "photos": ["https://..."] (optional, max 3) }`  
+Upload images first via **`POST /api/uploads/presign`** with `kind: "post-image"`, then pass returned `fileUrl` values in `photos`.  
 Posts expire after **12 hours** (content and comments/reactions removed; DM requests keep `postSnapshot`).
 
 ### 8.3 Post detail, comments, reactions
@@ -613,6 +614,7 @@ Match includes `postId` and `postSnapshot` for Requests UI.
 `kind` supports:
 - `profile-image`
 - `message-image`
+- `post-image` (local post attachments, max 3 per post)
 - `voice-message`
 
 Video uploads are intentionally not supported yet.

@@ -12,7 +12,21 @@ const {
   POST_CATEGORIES,
   DEFAULT_FEED_RADIUS_KM,
   MAX_FEED_RADIUS_KM,
+  MAX_POST_PHOTOS,
 } = require("../constants/posts");
+
+function normalizePostPhotos(raw) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const urls = raw
+    .map((item) => String(item || "").trim())
+    .filter((url) => /^https?:\/\//i.test(url));
+  if (urls.length > MAX_POST_PHOTOS) {
+    throw createError(`At most ${MAX_POST_PHOTOS} photos per post`, 400);
+  }
+  return urls;
+}
 
 async function loadActivePost(postId) {
   await expireStalePosts();
@@ -42,12 +56,14 @@ exports.createPost = async (userId, payload) => {
     throw createError("Enable location before posting", 400);
   }
 
+  const photos = normalizePostPhotos(payload.photos);
+
   const now = new Date();
   const post = await Post.create({
     authorId: userId,
     category,
     text,
-    photos: Array.isArray(payload.photos) ? payload.photos : [],
+    photos,
     location: {
       latitude: user.location.latitude,
       longitude: user.location.longitude,

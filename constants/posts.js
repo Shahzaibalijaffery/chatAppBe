@@ -16,6 +16,9 @@ const MAX_FEED_RADIUS_KM = 200;
 
 const REACTION_TYPES = ["like", "helpful"];
 
+/** Max images per post (text is always required). */
+const MAX_POST_PHOTOS = 3;
+
 module.exports = {
   POST_TTL_HOURS,
   POST_TTL_MS,
@@ -23,4 +26,5 @@ module.exports = {
   DEFAULT_FEED_RADIUS_KM,
   MAX_FEED_RADIUS_KM,
   REACTION_TYPES,
+  MAX_POST_PHOTOS,
 };
