@@ -9,6 +9,7 @@
     "seed:user": "node scripts/seedUser.js",
     "seed:companion": "node scripts/seedCompanionData.js",
     "seed:posts": "node scripts/seedPosts.js",
+    "seed:fresh": "node scripts/resetAndSeed.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

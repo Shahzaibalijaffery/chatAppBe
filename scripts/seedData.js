@@ -219,14 +219,14 @@ const LAST_NAMES = [
 ];
 
 const BIO_TEMPLATES = [
-  "Exploring {area} — always up for café and food.",
-  "Weekend walks and photography around {city}.",
-  "Gym, hiking, and good coffee in {area}.",
-  "Movies and casual hangouts in {city}.",
-  "Shopping and brunch spots in {area}.",
-  "Live music and reading cafés near {area}.",
-  "Food tours and street photography in {city}.",
-  "Trail runs and outdoor plans around {area}.",
+  "Based in {area}. I post local tips — cafés, traffic, and events around {city}.",
+  "Live near {area}. Usually out for walks and chai on weekends in {city}.",
+  "Work in {city}, home in {area}. Happy to share what's happening nearby.",
+  "Student / freelancer in {area}. I notice small city updates and share them here.",
+  "Born and raised around {city}. Know the food spots in {area} pretty well.",
+  "Commute through {area} daily — I'll post road and transit stuff when it's useful.",
+  "Weekend explorer in {city}. Cafés, pop-ups, and gigs near {area}.",
+  "Night owl in {area}. Ask me about late food in {city}.",
 ];
 
 const USERS_PER_CITY = 4;

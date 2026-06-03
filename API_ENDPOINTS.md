@@ -574,6 +574,8 @@ All error responses follow this format:
 **GET** `/api/posts/feed?radiusKm=50`  
 **Access:** Private · requires saved location.
 
+Returns nearby posts within `radiusKm`, plus **your own active posts** (always included, pinned first). Each post may include `isAuthor: true` for your entries.
+
 ### 8.2 Create post
 **POST** `/api/posts`  
 **Body:** `{ "category": "cafe|food|traffic|event|alert|other", "text": "...", "photos": [] }`  

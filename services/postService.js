@@ -66,6 +66,7 @@ exports.createPost = async (userId, payload) => {
     distanceKm: 0,
     viewerCommentCount: 0,
     viewerReacted: false,
+    isAuthor: true,
   });
 };
 
@@ -90,30 +91,34 @@ exports.getFeed = async (userId, radiusKm = DEFAULT_FEED_RADIUS_KM) => {
   const posts = await Post.find({
     expired: false,
     expiresAt: { $gt: now },
-    authorId: { $ne: userId },
   }).sort({ createdAt: -1 });
 
   const { latitude: lat1, longitude: lon1 } = user.location;
   const results = [];
+  const userIdStr = userId.toString();
 
   for (const post of posts) {
     const authorId = post.authorId.toString();
-    if (blockedIds.has(authorId)) {
-      continue;
-    }
+    const isOwn = authorId === userIdStr;
 
-    const author = await User.findById(post.authorId).select(
-      "blockedUserIds name visibleInDiscovery"
-    );
-    if (author?.visibleInDiscovery === false) {
-      continue;
-    }
-    if (
-      author?.blockedUserIds?.some(
-        (id) => id.toString() === userId.toString()
-      )
-    ) {
-      continue;
+    if (!isOwn) {
+      if (blockedIds.has(authorId)) {
+        continue;
+      }
+
+      const author = await User.findById(post.authorId).select(
+        "blockedUserIds name visibleInDiscovery"
+      );
+      if (author?.visibleInDiscovery === false) {
+        continue;
+      }
+      if (
+        author?.blockedUserIds?.some(
+          (id) => id.toString() === userIdStr
+        )
+      ) {
+        continue;
+      }
     }
 
     const distance = getDistanceKm(
@@ -122,7 +127,7 @@ exports.getFeed = async (userId, radiusKm = DEFAULT_FEED_RADIUS_KM) => {
       post.location.latitude,
       post.location.longitude
     );
-    if (distance > radius) {
+    if (!isOwn && distance > radius) {
       continue;
     }
 
@@ -134,22 +139,33 @@ exports.getFeed = async (userId, radiusKm = DEFAULT_FEED_RADIUS_KM) => {
         PostReaction.findOne({ postId: post._id, userId }),
       ]);
 
-    const authorDoc = await User.findById(post.authorId).select("-password");
+    const authorDoc = isOwn
+      ? user
+      : await User.findById(post.authorId).select("-password");
 
     results.push(
       formatPost(post, {
         author: authorDoc ? formatPublicUser(authorDoc) : null,
         commentCount,
         reactionCount,
-        distanceKm: Math.round(distance * 10) / 10,
+        distanceKm: isOwn ? 0 : Math.round(distance * 10) / 10,
         viewerCommentCount,
         viewerReacted: Boolean(viewerReaction),
         viewerReactionType: viewerReaction?.type || null,
+        isAuthor: isOwn,
       })
     );
   }
 
-  results.sort((a, b) => a.distanceKm - b.distanceKm);
+  results.sort((a, b) => {
+    if (a.isAuthor !== b.isAuthor) {
+      return a.isAuthor ? -1 : 1;
+    }
+    if (a.isAuthor) {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    }
+    return a.distanceKm - b.distanceKm;
+  });
 
   return {
     posts: results,
