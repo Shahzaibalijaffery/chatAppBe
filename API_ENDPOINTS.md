@@ -576,6 +576,8 @@ All error responses follow this format:
 
 Returns nearby posts within `radiusKm`, plus **your own active posts** (always included, pinned first). Each post may include `isAuthor: true` for your entries.
 
+**Demo feed auto-seed (optional):** When `AUTO_SEED_DEMO_FEED=true` (default in non-production), the server refreshes `@mychat.demo` posts every **12 hours** (`SEED_FEED_INTERVAL_HOURS`, default 12). Manual refresh: `npm run seed:feed:refresh`. Full wipe + users: `npm run seed:fresh`.
+
 ### 8.2 Create post
 **POST** `/api/posts`  
 **Body:** `{ "category": "cafe|food|traffic|event|alert|other", "text": "..." (required), "photos": ["https://..."] (optional, max 3) }`  

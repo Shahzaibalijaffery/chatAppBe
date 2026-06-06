@@ -243,6 +243,7 @@ function startHttpServer() {
 }
 
 const { expireStalePosts } = require("./utils/postExpiry");
+const { scheduleDemoFeedRefresh } = require("./services/feedSeedService");
 const POST_EXPIRY_INTERVAL_MS = 5 * 60 * 1000;
 
 connectDatabase()
@@ -253,6 +254,7 @@ connectDatabase()
         console.error("Post expiry job failed:", err);
       });
     }, POST_EXPIRY_INTERVAL_MS);
+    scheduleDemoFeedRefresh();
     return startHttpServer();
   })
   .catch((err) => {
