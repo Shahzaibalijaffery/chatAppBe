@@ -9,7 +9,7 @@ const PostComment = require("../models/PostComment");
 const PostReaction = require("../models/PostReaction");
 const { POST_TTL_MS } = require("../constants/posts");
 const { PAKISTAN_CITIES } = require("../scripts/seedData");
-const { postsForProfile, COMMENT_LINES } = require("../scripts/seedPostsData");
+const { COMMENT_LINES, planFeedPosts } = require("../scripts/seedPostsData");
 const { expireStalePosts } = require("../utils/postExpiry");
 
 const DEMO_EMAIL_PATTERN = /@mychat\.demo$/i;
@@ -92,47 +92,40 @@ async function clearDemoPostsAndEngagement() {
   return { postsRemoved: result.deletedCount || 0 };
 }
 
-async function seedPostsForUsers(users, now) {
+async function seedPostsForUsers(users, now, refreshSeed = 0) {
   let postCount = 0;
   const postsByCity = new Map();
 
-  for (let i = 0; i < users.length; i += 1) {
-    const user = users[i];
-    const citySlug = citySlugForUser(user);
-    const area = (user.location.areaName || user.location.city || "Nearby")
-      .split(",")[0]
-      .trim();
-    const city = user.location.city || "Islamabad";
-    const templates = postsForProfile(citySlug, area, city, i);
+  const planned = planFeedPosts(users, citySlugForUser, refreshSeed);
 
-    for (const tpl of templates) {
-      const createdAt = new Date(now.getTime() - tpl.hoursAgo * 60 * 60 * 1000);
-      const expiresAt = new Date(createdAt.getTime() + POST_TTL_MS);
+  for (const entry of planned) {
+    const { user, citySlug, category, text, hoursAgo, photos } = entry;
+    const createdAt = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000);
+    const expiresAt = new Date(createdAt.getTime() + POST_TTL_MS);
 
-      const post = await Post.create({
-        authorId: user._id,
-        category: tpl.category,
-        text: tpl.text,
-        photos: [],
-        location: {
-          latitude: user.location.latitude,
-          longitude: user.location.longitude,
-          areaName: user.location.areaName,
-          city: user.location.city,
-          country: user.location.country,
-        },
-        expiresAt,
-        expired: false,
-        createdAt,
-        updatedAt: createdAt,
-      });
+    const post = await Post.create({
+      authorId: user._id,
+      category,
+      text,
+      photos: photos || [],
+      location: {
+        latitude: user.location.latitude,
+        longitude: user.location.longitude,
+        areaName: user.location.areaName,
+        city: user.location.city,
+        country: user.location.country,
+      },
+      expiresAt,
+      expired: false,
+      createdAt,
+      updatedAt: createdAt,
+    });
 
-      postCount += 1;
-      if (!postsByCity.has(citySlug)) {
-        postsByCity.set(citySlug, []);
-      }
-      postsByCity.get(citySlug).push({ post, authorId: user._id.toString() });
+    postCount += 1;
+    if (!postsByCity.has(citySlug)) {
+      postsByCity.set(citySlug, []);
     }
+    postsByCity.get(citySlug).push({ post, authorId: user._id.toString() });
   }
 
   return { postCount, postsByCity };
@@ -205,7 +198,12 @@ async function refreshDemoFeedPosts() {
 
   const { postsRemoved } = await clearDemoPostsAndEngagement();
   const now = new Date();
-  const { postCount, postsByCity } = await seedPostsForUsers(users, now);
+  const refreshSeed = Math.floor(now.getTime() / POST_TTL_MS);
+  const { postCount, postsByCity } = await seedPostsForUsers(
+    users,
+    now,
+    refreshSeed
+  );
   const engagement = await seedEngagement(postsByCity, users, now);
 
   return {

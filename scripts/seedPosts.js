@@ -9,6 +9,7 @@ const mongoose = require("mongoose");
 const User = require("../models/User");
 const Post = require("../models/Post");
 const { POST_TTL_MS, POST_CATEGORIES } = require("../constants/posts");
+const { seedPostPhotos } = require("./seedPostsData");
 
 const SAMPLE_TEXTS = [
   "New café opened on the corner — great lattes and quiet seating.",
@@ -51,7 +52,7 @@ async function seedPosts() {
       authorId: user._id,
       category,
       text: SAMPLE_TEXTS[i],
-      photos: [],
+      photos: seedPostPhotos(category, i + 1),
       location: {
         latitude: user.location.latitude,
         longitude: user.location.longitude,

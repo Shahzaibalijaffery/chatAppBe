@@ -15,6 +15,14 @@ const POST_POOL = {
     { category: "event", text: "Weekend book swap in {area} park, 4–7pm. Bring one book, leave with another." },
     { category: "food", text: "Chai dhaba in {area} started serving paratha breakfast after 6am — solid and cheap." },
     { category: "other", text: "Margalla trail entrance from {area} side is muddy after last night's rain. Wear proper shoes." },
+    { category: "alert", text: "Water tanker blocking the narrow lane in {area} — cars reversing for 10 minutes." },
+    { category: "cafe", text: "Matcha soft serve pop-up in {area} today only — small cup is enough." },
+    { category: "food", text: "Home baker in {area} selling cinnamon rolls after 4pm — pre-order on WhatsApp." },
+    { category: "event", text: "Free yoga session on the {area} community lawn, Saturday 7am. Bring a mat." },
+    { category: "traffic", text: "School pickup chaos near {area} between 1:30–2:15pm. Avoid if you can." },
+    { category: "other", text: "Lost cat poster up near {area} mosque — grey tabby, very friendly." },
+    { category: "alert", text: "Gas smell reported on one street in {area} — utility crew already on site." },
+    { category: "food", text: "New desi brunch spot in {area} — karahi and fresh naan, opens at 10am." },
   ],
   lahore: [
     { category: "food", text: "Nihari stall in {area} was packed at sehri time. They ran out by 4:15am." },
@@ -90,34 +98,170 @@ function fill(text, area, city) {
   return text.replace(/\{area\}/g, area).replace(/\{city\}/g, city);
 }
 
-function postsForProfile(citySlug, area, city, userIndex) {
-  const pool = POST_POOL[citySlug] || POST_POOL.islamabad;
-  const extra = citySlug === "islamabad" ? 2 : citySlug === "lahore" || citySlug === "karachi" ? 1 : 0;
-  const count = 1 + extra;
-  const posts = [];
-  const used = new Set();
+function seededShuffle(items, seed) {
+  const arr = items.slice();
+  let state = (seed >>> 0) || 1;
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    state = (Math.imul(1664525, state) + 1013904223) >>> 0;
+    const j = state % (i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
-  for (let n = 0; n < count; n += 1) {
-    let idx = (userIndex * 3 + n * 5) % pool.length;
-    while (used.has(idx)) {
-      idx = (idx + 1) % pool.length;
-    }
-    used.add(idx);
-    const template = pool[idx];
-    const hoursAgo = 1 + ((userIndex + n) % 10);
-    posts.push({
-      category: template.category,
-      text: fill(template.text, area, city),
-      hoursAgo,
-    });
+function postsPerUserForCity(citySlug) {
+  if (citySlug === "islamabad") {
+    return 3;
+  }
+  if (citySlug === "lahore" || citySlug === "karachi") {
+    return 2;
+  }
+  return 1;
+}
+
+const PHOTO_CATEGORY_PREFIX = {
+  cafe: "cafe",
+  food: "food",
+  traffic: "road",
+  event: "event",
+  alert: "alert",
+  other: "local",
+};
+
+/** ~60% of seeded posts get 1–2 placeholder photos; rest stay text-only. */
+function seedPostPhotos(category, photoSeed) {
+  if (photoSeed % 5 >= 3) {
+    return [];
   }
 
-  return posts;
+  const prefix = PHOTO_CATEGORY_PREFIX[category] || "local";
+  const slug = `mychat-${prefix}-${photoSeed}`;
+  const photos = [`https://picsum.photos/seed/${slug}/800/600`];
+
+  if (photoSeed % 6 === 0) {
+    photos.push(`https://picsum.photos/seed/${slug}-b/800/600`);
+  }
+
+  return photos;
+}
+
+/**
+ * Plan varied posts for all demo users.
+ * @param {Array} users — mongoose user docs with location + email
+ * @param {(user: object) => string} getCitySlug
+ * @param {number} refreshSeed — changes each 12h refresh so copy rotates
+ */
+function planFeedPosts(users, getCitySlug, refreshSeed = 0) {
+  const sorted = [...users].sort((a, b) =>
+    String(a.email || "").localeCompare(String(b.email || ""))
+  );
+
+  const byCity = new Map();
+  for (let i = 0; i < sorted.length; i += 1) {
+    const user = sorted[i];
+    const slug = getCitySlug(user);
+    if (!byCity.has(slug)) {
+      byCity.set(slug, []);
+    }
+    byCity.get(slug).push({ user, globalIndex: i });
+  }
+
+  const planned = [];
+
+  for (const [citySlug, group] of byCity.entries()) {
+    const pool = POST_POOL[citySlug] || POST_POOL.islamabad;
+    const perUser = postsPerUserForCity(citySlug);
+    const citySeed =
+      refreshSeed +
+      citySlug.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+
+    const shuffled = seededShuffle(
+      pool.map((template, poolIndex) => ({ ...template, poolIndex })),
+      citySeed
+    );
+
+    const globalUsedTexts = new Set();
+    let cursor = 0;
+
+    for (const { user, globalIndex } of group) {
+      const area = (user.location?.areaName || user.location?.city || "Nearby")
+        .split(",")[0]
+        .trim();
+      const city = user.location?.city || "Islamabad";
+      const usedCategories = new Set();
+
+      for (let n = 0; n < perUser; n += 1) {
+        let picked = null;
+
+        for (let attempt = 0; attempt < shuffled.length; attempt += 1) {
+          const candidate = shuffled[(cursor + attempt) % shuffled.length];
+          const textKey = candidate.text;
+
+          if (globalUsedTexts.has(textKey)) {
+            continue;
+          }
+          if (
+            usedCategories.has(candidate.category) &&
+            usedCategories.size < 6 &&
+            attempt < shuffled.length - 1
+          ) {
+            continue;
+          }
+
+          picked = candidate;
+          cursor = (cursor + attempt + 1) % shuffled.length;
+          globalUsedTexts.add(textKey);
+          usedCategories.add(candidate.category);
+          break;
+        }
+
+        if (!picked) {
+          picked = shuffled[cursor % shuffled.length];
+          cursor += 1;
+        }
+
+        planned.push({
+          user,
+          citySlug,
+          category: picked.category,
+          text: fill(picked.text, area, city),
+          hoursAgo: 1 + ((globalIndex + n + refreshSeed) % 11),
+          photos: seedPostPhotos(
+            picked.category,
+            globalIndex * 17 + refreshSeed * 31 + picked.poolIndex + n * 7
+          ),
+        });
+      }
+    }
+  }
+
+  return planned;
+}
+
+/** @deprecated Use planFeedPosts for batch seeding. */
+function postsForProfile(citySlug, area, city, userIndex, refreshSeed = 0) {
+  const stubUser = {
+    email: `seed.${userIndex}@mychat.demo`,
+    location: { areaName: area, city },
+  };
+  return planFeedPosts(
+    [stubUser],
+    () => citySlug,
+    refreshSeed + userIndex
+  ).map(({ category, text, hoursAgo, photos }) => ({
+    category,
+    text,
+    hoursAgo,
+    photos: photos || [],
+  }));
 }
 
 module.exports = {
   POST_POOL,
   COMMENT_LINES,
   postsForProfile,
+  planFeedPosts,
+  postsPerUserForCity,
+  seedPostPhotos,
   fill,
 };

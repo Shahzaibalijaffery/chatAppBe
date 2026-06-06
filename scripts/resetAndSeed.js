@@ -64,7 +64,12 @@ async function run() {
 
   console.log("Creating local posts...");
   const users = createdUsers.map(({ user }) => user);
-  const { postCount, postsByCity } = await seedPostsForUsers(users, now);
+  const refreshSeed = Math.floor(now.getTime() / POST_TTL_MS);
+  const { postCount, postsByCity } = await seedPostsForUsers(
+    users,
+    now,
+    refreshSeed
+  );
   console.log(`Posts: ${postCount}\n`);
 
   console.log("Adding comments and reactions (Islamabad)...");
